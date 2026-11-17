@@ -1,0 +1,49 @@
+{
+  "sections": {
+    "page-header": {
+      "type": "blko-page-header",
+      "settings": {
+        "breadcrumb": "Calm routine guide",
+        "heading": "Your calm routine.",
+        "text": "A simple wash and moisturize routine for eczema-prone skin, with fragrance-free Calm wash and Calm lotion."
+      }
+    },
+    "ritual-steps": {
+      "type": "blko-balm-ritual-steps"
+    },
+    "claims": {
+      "type": "blko-isle-claims"
+    },
+    "botanical": {
+      "type": "blko-tide-botanical"
+    },
+    "facts": {
+      "type": "blko-dew-facts"
+    },
+    "free-from": {
+      "type": "blko-free-from-list"
+    },
+    "fbt": {
+      "type": "blko-twist-fbt"
+    },
+    "newsletter": {
+      "type": "blko-newsletter",
+      "settings": {
+        "eyebrow": "Stay in touch",
+        "heading": "Join the Lather list",
+        "message": "News about Calm wash and Calm lotion.",
+        "button_label": "Sign up"
+      }
+    }
+  },
+  "order": [
+    "page-header",
+    "ritual-steps",
+    "claims",
+    "botanical",
+    "facts",
+    "free-from",
+    "fbt",
+    "newsletter"
+  ]
+}
