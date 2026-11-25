@@ -1,0 +1,8 @@
+<i hidden data-blko-block="wishlist-share"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<script src="/apps/blocko/wishlist.js" defer></script>
+<div class="blko-wls" id="blko-wls-{{ section.id }}" data-blko-wl="share"><script type="application/json" data-blko-cfg>{"share":{{ section.settings.share_text | json }},"copied":{{ section.settings.copied_text | json }},"banner":{{ section.settings.banner_text | json }},"saveAll":{{ section.settings.save_all_text | json }},"add":{{ section.settings.add_text | json }},"sold":{{ section.settings.sold_text | json }},"color":{{ section.settings.color | json }},"money":{{ shop.money_format | json }}}</script></div>
+<style>.blko-wls{max-width:1200px;margin-inline:auto;padding:16px}</style>
+{% schema %}
+{"name":"Blocko Wishlist Share","settings":[{"type":"text","id":"share_text","label":"Share button","default":"Share my wishlist"},{"type":"text","id":"copied_text","label":"Copied","default":"Link copied"},{"type":"text","id":"banner_text","label":"Banner (use {n} for count)","default":"A friend shared {n} products"},{"type":"text","id":"save_all_text","label":"Save all button","default":"Save all to my wishlist"},{"type":"text","id":"add_text","label":"Add button","default":"Add to cart"},{"type":"text","id":"sold_text","label":"Sold out","default":"Sold out"},{"type":"color","id":"color","label":"Accent","default":"#6538bd"}],"presets":[{"name":"Blocko Wishlist Share"}],"enabled_on":{"templates":["page"]}}
+{% endschema %}

@@ -1,0 +1,56 @@
+<i hidden data-blko-block="rating-stars"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- if product -%}
+<div class="blko-rs" id="blko-rs-{{ section.id }}" hidden style="--c:{{ section.settings.color }}">
+  <a class="blko-rs__link" href="#blko-reviews">
+    <span class="blko-rs__stars" aria-hidden="true"><i></i></span>
+    <span class="blko-rs__text"></span>
+  </a>
+</div>
+<script>
+(function () {
+  var root = document.getElementById('blko-rs-{{ section.id }}');
+  if (!root) return;
+  var label = {{ section.settings.label | json }};
+  var url = ((window.Shopify && Shopify.routes && Shopify.routes.root) || '/') + 'apps/blocko/reviews?product_id={{ product.id }}';
+  fetch(url, {headers: {Accept: 'application/json'}}).then(function (r) {
+    if (!r.ok) throw r;
+    return r.json();
+  }).then(function (d) {
+    if (!d.connected || !d.count) return;
+    root.querySelector('.blko-rs__stars i').style.width = (d.average / 5 * 100) + '%';
+    root.querySelector('.blko-rs__text').textContent = d.average + ' (' + d.count + ' ' + label + ')';
+    root.hidden = false;
+  }).catch(function () {});
+  root.querySelector('a').addEventListener('click', function (e) {
+    var t = document.getElementById('blko-reviews');
+    if (t) {
+      e.preventDefault();
+      t.scrollIntoView({behavior: 'smooth'});
+    }
+  });
+})();
+</script>
+{%- endif -%}
+<style>
+  .blko-rs { margin: 8px 0; font: inherit; }
+  .blko-rs[hidden] { display: none; }
+  .blko-rs__link { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
+  .blko-rs__link:hover .blko-rs__text { text-decoration: underline; }
+  .blko-rs__stars { position: relative; display: inline-block; font-size: 18px; line-height: 1; letter-spacing: 2px; color: rgba(0,0,0,.18); }
+  .blko-rs__stars::before { content: "★★★★★"; }
+  .blko-rs__stars i { position: absolute; inset: 0 auto 0 0; width: 0; overflow: hidden; color: var(--c); }
+  .blko-rs__stars i::before { content: "★★★★★"; }
+  .blko-rs__text { font-size: 14px; }
+</style>
+{% schema %}
+{
+  "name": "Blocko Rating Stars",
+  "settings": [
+    {"type": "color", "id": "color", "label": "Star color", "default": "#6538bd"},
+    {"type": "text", "id": "label", "label": "Reviews word", "default": "reviews"}
+  ],
+  "presets": [{"name": "Blocko Rating Stars"}],
+  "enabled_on": {"templates": ["product"]}
+}
+{% endschema %}

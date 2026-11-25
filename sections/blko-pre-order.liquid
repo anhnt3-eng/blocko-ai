@@ -1,0 +1,42 @@
+<i hidden data-blko-block="pre-order"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-po" id="blko-po-{{ section.id }}" hidden>
+<style>
+#blko-po-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;--c:{{ section.settings.color }}}
+#blko-po-{{ section.id }} .b{max-width:440px;padding:20px;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+#blko-po-{{ section.id }} button{width:100%;padding:13px 18px;border:0;border-radius:12px;background:var(--c);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+#blko-po-{{ section.id }} button:disabled{opacity:.6}
+#blko-po-{{ section.id }} p{margin:10px 0 0;font-size:14px;opacity:.8}
+</style>
+<div class="b">
+<button type="button">{{ section.settings.button }}</button>
+{%- if section.settings.note != blank -%}<p>{{ section.settings.note | escape }}</p>{%- endif -%}
+<p class="m" role="status"></p>
+</div>
+</div>
+<script>
+(function(){
+var r=document.getElementById('blko-po-{{ section.id }}'),
+V=[{%- for v in product.variants -%}{"id":{{ v.id }},"p":{% if v.inventory_policy == 'continue' and v.inventory_management != blank and v.inventory_quantity <= 0 %}true{% else %}false{% endif %}}{% unless forloop.last %},{% endunless %}{%- endfor -%}],
+R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
+b=r.querySelector('button'),m=r.querySelector('.m'),last;
+function cur(){var e=document.querySelector('form[action*="/cart/add"] [name="id"]'),
+id=(e&&e.value)||new URLSearchParams(location.search).get('variant')||'{{ product.selected_or_first_available_variant.id }}';
+return V.filter(function(v){return String(v.id)===String(id)})[0]}
+function sync(){var v=cur();if(!v||v.id===last)return;last=v.id;r.hidden=!v.p;m.textContent=''}
+sync();setInterval(sync,400);document.addEventListener('change',sync);
+b.addEventListener('click',function(){var v=cur();if(!v||!v.p)return;b.disabled=true;
+fetch(R+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({items:[{id:v.id,quantity:1,properties:{_preorder:true}}]})})
+.then(function(x){if(!x.ok)throw 0;location.href=R+'cart'})
+.catch(function(){m.textContent={{ section.settings.error | json }};b.disabled=false})});
+})();
+</script>
+{% schema %}
+{"name":"Blocko Pre-order","settings":[
+{"type":"text","id":"button","label":"Button text","default":"Pre-order"},
+{"type":"text","id":"note","label":"Shipping note","default":"Ships when back in stock. You are charged today."},
+{"type":"text","id":"error","label":"Error message","default":"Could not add to cart. Try again."},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}],
+"presets":[{"name":"Blocko Pre-order"}],"enabled_on":{"templates":["product"]}}
+{% endschema %}

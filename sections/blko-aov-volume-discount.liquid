@@ -1,0 +1,35 @@
+<i hidden data-blko-block="aov-volume-discount"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-vd" id="blko-vd-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
+<style>.blko-vd{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}.blko-vd>*{max-width:520px}.blko-vd .r{position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:14px;background:#fff;color:#111;border:1px solid rgba(0,0,0,.12);border-radius:12px;cursor:pointer}.blko-vd .r:has(input:checked){border-color:var(--c)}.blko-vd input{accent-color:var(--c)}.blko-vd .g{flex:1}.blko-vd small{display:block;opacity:.6}.blko-vd .t{position:absolute;top:-9px;right:14px;background:var(--c);color:#fff;font-size:10px;padding:2px 9px;border-radius:9px}.blko-vd button{width:100%;padding:12px;border:0;border-radius:99px;background:var(--c);color:#fff;font:inherit}</style>
+<h2></h2><div></div>
+<button type="button">{{ section.settings.button }}</button></div>
+<script>(()=>{
+const s=document.getElementById('blko-vd-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},
+M={{ shop.money_format | json }},V0={{ product.selected_or_first_available_variant.id }},P0={{ product.selected_or_first_available_variant.price }},
+P={ {%- for v in product.variants -%}{{ v.id }}:{{ v.price }},{%- endfor -%} },
+b=s.querySelector('button'),L=s.querySelector('div'),T=b.textContent,
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+F=()=>document.querySelector('form[action*="/cart/add"] [name=id]'),
+e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n};
+let o;try{o={{ shop.metafields.avada_bundle.offer | json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='volume-discount'&&x.status==='active'&&(x.triggerProducts||[]).some(p=>String(p.id)==='{{ product.id }}'))}catch(x){}
+const D=o&&o.discountInformation;if(!D)return;let k=Math.max(0,D.findIndex(t=>t.isDefault));
+const draw=()=>{const p=P[(F()||{}).value]||P0;D.forEach((t,i)=>{const q=t.quantity,pc=t.discountType==='percentage',d=pc?t.discountValue:0,full=p*q,
+v=pc?t.discountValue+'%':m(t.discountValue*100),l=e('label',0,L),r=e('input',0,l),g=e('span',0,l);
+l.className='r';r.type='radio';r.name='vd';r.checked=i==k;r.onchange=()=>k=i;g.className='g';
+e('strong',t.title.replace('{{ '{{' }}product_quantity}}',q),g);
+e('small',t.subTitle.replace('{{ '{{' }}discount_value}}',v),g);
+if(d>0)e('s',m(full),l);e('strong',m(full*(100-d)/100),l);
+if(t.isDefault&&t.badgeText)e('span',t.badgeText,l).className='t'})};
+s.querySelector('h2').textContent=o.volumeTitle;
+draw();s.hidden=false;
+b.onclick=async()=>{b.disabled=true;try{const f=F(),t=D[k],a=await fetch(R+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify({id:f&&f.value||V0,quantity:t.quantity,properties:{_aov_bundles:JSON.stringify({offerId:o.id})}})});if(!a.ok)throw await a.json();
+if(t.discountValue>0&&o.code){const c=(await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
+await fetch(R+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
+location.href=R+'cart'}catch(x){b.disabled=false;b.textContent=x.description||T}}})();</script>
+{% schema %}
+{"name":"Blocko AOV Volume","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko AOV Volume"}],"settings":[{"type":"paragraph","content":"Shows this product's AOV.ai Bundle volume offer. Tiers and code come from AOV.ai. Turn off AOV.ai's app embed to avoid a second widget."},
+{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
+{% endschema %}

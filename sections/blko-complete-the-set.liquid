@@ -1,0 +1,44 @@
+<i hidden data-blko-block="complete-the-set"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{% assign st = section.settings %}{% assign a = product.first_available_variant %}{% assign b = st.p1 %}{% assign c = st.p2 %}{% assign vb = b.first_available_variant %}{% assign vc = c.first_available_variant %}
+{% capture ia %}<img width="56" height="56" src="{{ product.featured_image|image_url: width: 56 }}" alt="">{% endcapture %}
+<style>
+.blko-cs{max-width:1200px;margin-inline:auto;padding:40px 16px}
+.blko-cs>*{max-width:520px}
+.blko-cs .r{display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:14px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+.blko-cs .r:has(input:checked){border-color:var(--c)}
+.blko-cs input{accent-color:var(--c)}.blko-cs .g{flex:1}.blko-cs img{width:28px;height:28px;border-radius:8px;object-fit:cover;margin:6px 4px 0 0}
+.blko-cs button{width:100%;padding:12px;border:0;border-radius:99px;background:#17151d;color:#fff;font:inherit;cursor:pointer}
+</style>
+<div class="blko-cs" id="blko-cs-{{ section.id }}" style="--c:{{ st.color }}">
+<h2>{{ st.heading }}</h2>
+{% for n in (1..3) %}
+{% if n > 1 and b == blank or n > 2 and c == blank %}{% continue %}{% endif %}
+{% assign k = 'off'|append: n %}{% assign l = 'l'|append: n %}{% assign off = st[k] %}
+{% assign sum = a.price %}{% assign ids = a.id %}
+{% if n > 1 %}{% assign sum = sum|plus: vb.price %}{% assign ids = ids|append: ","|append: vb.id %}{% endif %}
+{% if n > 2 %}{% assign sum = sum|plus: vc.price %}{% assign ids = ids|append: ","|append: vc.id %}{% endif %}
+<label class="r"><input type="radio" name="c{{ section.id }}" value="{{ ids }}"{% if n == 2 %} checked{% endif %}>
+<span class="g"><strong>{{ st[l] }}</strong><br>{{ ia }}{% if n > 1 %}<img width="56" height="56" src="{{ b.featured_image|image_url: width: 56 }}" alt="">{% endif %}{% if n > 2 %}<img width="56" height="56" src="{{ c.featured_image|image_url: width: 56 }}" alt="">{% endif %}</span>
+{% if off > 0 %}<s>{{ sum|money }}</s>{% endif %}<strong>{{ 100|minus: off|times: sum|divided_by: 100|money }}</strong></label>
+{% endfor %}
+<button type="button">{{ st.button }}</button>
+</div>
+<script>(()=>{var s=document.getElementById('blko-cs-{{ section.id }}'),b=s.querySelector('button'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',t=b.textContent;
+b.onclick=()=>{var f=document.querySelector('form[action*="/cart/add"] [name=id]'),i=s.querySelector('input:checked').value.split(',');if(f&&f.value)i[0]=f.value;b.disabled=true;
+fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:i.map(x=>({id:+x,quantity:1}))})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description||t})}})();</script>
+{% schema %}
+{"name":"Blocko Complete the Set","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Complete the Set"}],
+"settings":[
+{"type":"text","id":"heading","label":"Heading","default":"Complete the set"},
+{"type":"product","id":"p1","label":"Product 2"},
+{"type":"product","id":"p2","label":"Product 3"},
+{"type":"text","id":"l1","label":"Label 1","default":"1 item"},
+{"type":"text","id":"l2","label":"Label 2","default":"The duo"},
+{"type":"text","id":"l3","label":"Label 3","default":"The full set"},
+{"type":"range","id":"off2","label":"Duo saving %","min":0,"max":50,"default":10},
+{"type":"range","id":"off3","label":"Set saving %","min":0,"max":50,"default":15},
+{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"Savings are display only. Create a matching Shopify automatic discount so checkout charges this price."}]}
+{% endschema %}

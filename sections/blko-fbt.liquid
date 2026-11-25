@@ -1,0 +1,38 @@
+<i hidden data-blko-block="fbt"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{% assign st=section.settings %}{% assign v=product.selected_or_first_available_variant %}
+<style>
+.blko-fb{max-width:1200px;margin-inline:auto;padding:40px 16px}
+.blko-fb>*{max-width:520px}
+.blko-fb .r{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+.blko-fb input{accent-color:var(--c)}.blko-fb .g{flex:1}
+.blko-fb img{width:40px;height:40px;border-radius:8px}
+.blko-fb button{width:100%;padding:12px;border:0;border-radius:99px;background:#17151d;color:#fff;font:inherit;cursor:pointer}
+</style>
+<div class="blko-fb" id="blko-fb-{{ section.id }}" style="--c:{{ st.color }}">
+<h2>{{ st.heading }}</h2><div class="l">
+<label class="r"><input type="checkbox" value="{{ v.id }}" data-p="{{ v.price }}" checked disabled><img width="80" height="80" src="{{ product.featured_image|image_url:width:80 }}" alt=""><span class="g">{{ st.this }}: {{ product.title|escape }}</span><strong>{{ v.price|money }}</strong></label>
+{% for p in st.list %}{% assign w=p.first_available_variant %}{% if p.available %}
+<label class="r"><input type="checkbox" value="{{ w.id }}" data-p="{{ w.price }}" checked><img width="80" height="80" src="{{ p.featured_image|image_url:width:80 }}" alt=""><span class="g">{{ p.title|escape }}</span><strong>{{ w.price|money }}</strong></label>
+{% endif %}{% endfor %}</div>
+<button type="button"></button>
+</div>
+<script>(()=>{var T={{ st.button|json }},s=document.getElementById('blko-fb-{{ section.id }}'),L=s.querySelector('.l'),b=s.querySelector('button'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
+m=c=>{{ shop.money_format|json }}.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+u=()=>{var a=[...L.querySelectorAll('input')],k=a.filter(i=>i.checked),t=k.reduce((n,i)=>n+ +i.dataset.p,0);if(k.length==a.length&&a.length>1)t=t*(100-{{ st.off }})/100|0;
+b.textContent=T.replace('{n}',k.length).replace('{price}',m(t))};
+s.onchange=u;u();
+if(!L.querySelector('input:not(:disabled)'))fetch(r+'recommendations/products.json?product_id={{ product.id }}&limit=2&intent=complementary').then(x=>x.json()).then(j=>{j.products.filter(p=>p.available).forEach(p=>{var l=L.firstElementChild.cloneNode(true),i=l.querySelector('input'),q=n=>l.querySelector(n);i.disabled=false;i.value=(p.variants.find(v=>v.available)||p.variants[0]).id;i.dataset.p=p.price;q('img').src=p.featured_image;q('.g').textContent=p.title;q('strong').textContent=m(p.price);L.append(l)});u()});
+b.onclick=()=>{b.disabled=true;
+fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[...L.querySelectorAll('input:checked')].map(i=>({id:+i.value,quantity:1}))})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description||T})}})();</script>
+{% schema %}
+{"name":"Blocko Bought Together","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Bought Together"}],
+"settings":[
+{"type":"text","id":"heading","label":"Heading","default":"Frequently bought together"},
+{"type":"text","id":"this","label":"This item label","default":"This item"},
+{"type":"product_list","id":"list","label":"Add-ons (empty = auto)","limit":2},
+{"type":"range","id":"off","label":"Saving % if all checked","min":0,"max":50,"default":10},
+{"type":"text","id":"button","label":"Button ({n}, {price})","default":"Add {n} to cart · {price}"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"Savings are display only. Create a matching Shopify automatic discount so checkout charges it."}]}
+{% endschema %}

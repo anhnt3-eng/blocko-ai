@@ -1,0 +1,8 @@
+<i hidden data-blko-block="wishlist"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<script src="/apps/blocko/wishlist.js" defer></script>
+<div class="blko-wlh" id="blko-wlh-{{ section.id }}" data-blko-wl="header"><script type="application/json" data-blko-cfg>{"title":{{ section.settings.title | json }},"empty":{{ section.settings.empty_text | json }},"add":{{ section.settings.add_text | json }},"sold":{{ section.settings.sold_text | json }},"color":{{ section.settings.color | json }},"money":{{ shop.money_format | json }}}</script></div>
+<style>.blko-wlh{display:inline-block}</style>
+{% schema %}
+{"name":"Blocko Wishlist","settings":[{"type":"text","id":"title","label":"Heading","default":"Wishlist"},{"type":"text","id":"empty_text","label":"Empty","default":"Your wishlist is empty."},{"type":"text","id":"add_text","label":"Add button","default":"Add to cart"},{"type":"text","id":"sold_text","label":"Sold out","default":"Sold out"},{"type":"color","id":"color","label":"Accent","default":"#6538bd"}],"presets":[{"name":"Blocko Wishlist"}],"enabled_on":{"groups":["header"]}}
+{% endschema %}

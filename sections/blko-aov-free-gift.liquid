@@ -1,0 +1,62 @@
+<i hidden data-blko-block="aov-free-gift"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign s = section.settings
+  assign camp = nil
+  assign now = 'now' | date: '%s' | plus: 0
+  for c in shop.metafields.avada_free_gifts.giftCampaigns.value
+    if c.status == 'active' and c.triggerType == 'cart-value' and c.giftProducts.size > 0
+      assign e = c.endDate | date: '%s' | plus: 0
+      unless c.enabledEndDate and e < now
+        assign camp = c
+        break
+      endunless
+    endif
+  endfor
+-%}
+{%- if camp -%}
+{%- liquid
+  assign tier = camp.discountInformation.first
+  assign g = camp.giftProducts.first
+  assign gp = all_products[g.handle]
+  assign did = camp.discountCodeAppId | split: '/' | last
+  assign tc = ''
+  case camp.type
+    when 'milestone-reward'
+      assign tc = '~tmr'
+    when 'gift-with-cart-value'
+      assign tc = '~tca'
+  endcase
+-%}
+<div class="blko-ag" id="blko-ag-{{ section.id }}" hidden>
+<style>.blko-ag{background:{{ s.bg }};color:{{ s.fg }};font:inherit;font-size:14px;text-align:center;padding:8px 16px}.blko-ag p{margin:0 0 6px}.blko-ag i{display:block;height:4px;max-width:420px;margin:0 auto;border-radius:4px;background:rgba(255,255,255,.3);overflow:hidden}.blko-ag i b{display:block;height:100%;width:0;background:{{ s.color }};transition:width .3s}</style>
+<p></p><i><b></b></i>
+</div>
+<script>(()=>{
+const r=document.getElementById('blko-ag-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},
+T={{ tier.triggerValue | default: 0 | times: 100 }},CODE={{ camp.code | json }},CAMP={{ camp.id | json }},PROP=CAMP+{{ tc | json }}+'~d{{ did }}',
+V={{ gp.selected_or_first_available_variant.id | default: g.variants.first.id | json }},GIFT={{ g.title | json }},
+A='{{ '{{' }}amount_left}}',N='{{ '{{' }}nearest_reward}}',
+PRE={{ tier.beforeAchievedMessage | json }}||'You are '+A+' away from '+N,POST={{ camp.postAchieveMessage | json }}||'You got '+N,REW={{ s.reward | json }}.replace('{gift}',GIFT);
+let busy=0,t;
+const m=c=>{{ shop.money_format | json }}.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+P=(u,b)=>fetch(R+u,{method:'POST',headers:J,body:JSON.stringify(b)}),
+mine=i=>i.properties&&String(i.properties._aovCampId||'').split('~')[0]==CAMP,
+sync=async()=>{if(busy)return q();busy=1;try{
+let c=await(await fetch(R+'cart.js')).json();
+const G=c.items.filter(mine),g=G[0],n=G.reduce((a,i)=>a+i.quantity,0),sub=c.items.filter(i=>!mine(i)).reduce((a,i)=>a+i.final_line_price,0),ok=T>0&&sub>=T;
+if(ok&&!g&&V){await P('cart/add.js',{items:[{id:V,quantity:1,properties:{_aovCampId:PROP}}]});c=0}
+else if(g&&(!ok||n>1)){const k=ok&&(G.find(i=>!i.final_line_price)||g);for(const i of G)if(i!=k)await P('cart/change.js',{id:i.key,quantity:0});if(k&&k.quantity>1)await P('cart/change.js',{id:k.key,quantity:1});c=0}
+if(ok){const k=(c||await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!k.includes(CODE)){await P('cart/update.js',{discount:k.concat(CODE).join(',')});c=0}}
+if(c===0)document.dispatchEvent(new CustomEvent('cart:refresh',{bubbles:true}));
+r.querySelector('p').textContent=(ok?POST:PRE).replace(A,m(Math.max(T-sub,0))).replace(N,REW);
+r.querySelector('b').style.width=Math.min(T?sub/T*100:100,100)+'%';r.hidden=!sub&&!{{ s.empty }};
+}catch(e){}setTimeout(()=>busy=0,600)},
+q=()=>{clearTimeout(t);t=setTimeout(sync,350)};
+new PerformanceObserver(l=>l.getEntries().some(e=>/\/cart\/(add|change|update|clear)/.test(e.name))&&q()).observe({entryTypes:['resource']});
+['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,q));
+document.addEventListener('visibilitychange',()=>document.hidden||q());sync()})()</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko AOV Free Gift","enabled_on":{"groups":["header"]},"presets":[{"name":"Blocko AOV Free Gift"}],"settings":[{"type":"paragraph","content":"Shows your active AOV.ai Free Gift campaign (cart value or milestone): progress, gift and discount code. Rules and messages come from AOV.ai. Turn off AOV.ai's app embed so the gift is not added twice."},{"type":"text","id":"reward","label":"Reward text","default":"a free {gift}"},{"type":"checkbox","id":"empty","label":"Show when cart is empty","default":true},{"type":"color","id":"bg","label":"Background","default":"#1c1c1c"},{"type":"color","id":"fg","label":"Text","default":"#ffffff"},{"type":"color","id":"color","label":"Bar","default":"#6538bd"}]}
+{% endschema %}

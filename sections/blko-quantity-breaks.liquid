@@ -1,0 +1,45 @@
+<i hidden data-blko-block="quantity-breaks"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- assign v = product.selected_or_first_available_variant -%}
+<style>
+.blko-qb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}
+.blko-qb>*{max-width:520px}.blko-qb h2{margin:0 0 20px}
+.blko-qb .r{position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:14px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px;cursor:pointer}
+.blko-qb .r:has(input:checked){border-color:var(--c)}
+.blko-qb input{accent-color:var(--c)}.blko-qb .g{flex:1}.blko-qb small{display:block;opacity:.65}
+.blko-qb .t{position:absolute;top:-9px;right:14px;background:var(--c);color:#fff;font-size:10px;padding:2px 9px;border-radius:99px}
+.blko-qb button{width:100%;padding:12px;border:0;border-radius:99px;background:#17151d;color:#fff;font:inherit;cursor:pointer}
+</style>
+<div class="blko-qb" id="blko-qb-{{ section.id }}" style="--c:{{ section.settings.color }}">
+{%- if section.settings.heading != blank -%}<h2>{{ section.settings.heading }}</h2>{%- endif -%}
+{%- for n in (1..3) -%}
+{%- assign k = 'off' | append: n -%}{%- assign t = 'tag' | append: n -%}
+{%- assign off = section.settings[k] | default: 0 -%}
+{%- assign full = v.price | times: n -%}
+{%- assign now = 100 | minus: off | times: full | divided_by: 100 -%}
+<label class="r">{%- if section.settings[t] != blank -%}<span class="t">{{ section.settings[t] }}</span>{%- endif -%}
+<input type="radio" name="q{{ section.id }}" value="{{ n }}"{% if n == 2 %} checked{% endif %}>
+<span class="g"><strong>{{ section.settings.buy }} {{ n }}</strong>{%- if off > 0 -%}<small>{{ section.settings.save }} {{ off }}%</small>{%- endif -%}</span>
+{%- if off > 0 -%}<s>{{ full | money }}</s>{%- endif -%}<strong>{{ now | money }}</strong></label>
+{%- endfor -%}
+<button type="button">{{ section.settings.button }}</button>
+</div>
+<script>(()=>{var s=document.getElementById('blko-qb-{{ section.id }}'),b=s.querySelector('button'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',t=b.textContent;
+b.onclick=()=>{var f=document.querySelector('form[action*="/cart/add"] [name=id]');b.disabled=true;
+fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:f&&f.value||{{ v.id }},quantity:+s.querySelector('input:checked').value})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description||t})}})();</script>
+{% schema %}
+{"name":"Blocko Quantity Breaks","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Quantity Breaks"}],
+"settings":[
+{"type":"text","id":"heading","label":"Heading","default":"Buy more, save more"},
+{"type":"text","id":"buy","label":"Row label","default":"Buy"},
+{"type":"text","id":"save","label":"Saving label","default":"Save"},
+{"type":"range","id":"off1","label":"Buy 1 saving %","min":0,"max":50,"default":0},
+{"type":"range","id":"off2","label":"Buy 2 saving %","min":0,"max":50,"default":15},
+{"type":"range","id":"off3","label":"Buy 3 saving %","min":0,"max":50,"default":25},
+{"type":"text","id":"tag1","label":"Buy 1 tag"},
+{"type":"text","id":"tag2","label":"Buy 2 tag","default":"Most popular"},
+{"type":"text","id":"tag3","label":"Buy 3 tag","default":"Best value"},
+{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"Savings are display only. Create a Shopify automatic discount with the same percentages so checkout charges the price shown."}]}
+{% endschema %}

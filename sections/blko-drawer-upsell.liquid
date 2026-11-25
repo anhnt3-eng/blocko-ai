@@ -1,0 +1,12 @@
+<i hidden data-blko-block="drawer-upsell"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- assign s = section.settings -%}
+<div data-blko-drawer id="blko-du-{{ section.id }}" style="--blko-accent:{{ s.color }}">
+<script type="application/json" data-blko-cfg>
+{"moneyFormat":{{ shop.money_format | json }},"title":{{ s.title | json }},"empty":{{ s.empty | json }},"checkout":{{ s.co | json }},"viewCart":{{ s.vc | json }},"upsell":{"source":{{ s.source | json }},"title":{{ s.uh | json }},"add":{{ s.add | json }},"limit":{{ s.limit }}{%- if s.source == "aov" -%},"offers":{{ shop.metafields.avada_bundle.offer | json }}{%- endif -%} } }
+</script>
+</div>
+<script src="/apps/blocko/drawer.js" defer></script>
+{% schema %}
+{"name":"Blocko Drawer Upsell","enabled_on":{"groups":["header"]},"presets":[{"name":"Blocko Drawer Upsell"}],"settings":[{"type":"text","id":"title","label":"Title","default":"Your cart"},{"type":"text","id":"empty","label":"Empty text","default":"Your cart is empty"},{"type":"text","id":"co","label":"Checkout button","default":"Checkout"},{"type":"text","id":"vc","label":"Cart link","default":"View cart"},{"type":"select","id":"source","label":"Offers from","default":"shopify","options":[{"value":"shopify","label":"Shopify recommendations"},{"value":"aov","label":"AOV Bundle upsell offers"}]},{"type":"text","id":"uh","label":"Upsell title","default":"Pairs well with"},{"type":"text","id":"add","label":"Add button","default":"Add"},{"type":"range","id":"limit","label":"Max products","min":1,"max":6,"step":1,"default":3},{"type":"paragraph","content":"AOV source: create an active Product recommendation (upsell) offer in AOV Bundle with its discount switched on. AOV applies that discount in the cart by itself."},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
+{% endschema %}

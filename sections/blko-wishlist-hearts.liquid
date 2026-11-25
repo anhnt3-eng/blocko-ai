@@ -1,0 +1,7 @@
+<i hidden data-blko-block="wishlist-hearts"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<script src="/apps/blocko/wishlist.js" defer></script>
+<div class="blko-wlg" id="blko-wlg-{{ section.id }}" data-blko-wl="hearts" hidden><script type="application/json" data-blko-cfg>{"selector":{{ section.settings.selector | json }},"label":{{ section.settings.label | json }},"color":{{ section.settings.color | json }}}</script></div>
+{% schema %}
+{"name":"Blocko Wishlist Hearts","settings":[{"type":"paragraph","content":"Adds a heart to product cards on collection, search and home pages. One install covers every page."},{"type":"text","id":"selector","label":"Card CSS selector (blank = auto)"},{"type":"text","id":"label","label":"Heart label (screen readers)","default":"Save to wishlist"},{"type":"color","id":"color","label":"Accent","default":"#6538bd"}],"presets":[{"name":"Blocko Wishlist Hearts"}],"enabled_on":{"groups":["footer"]}}
+{% endschema %}

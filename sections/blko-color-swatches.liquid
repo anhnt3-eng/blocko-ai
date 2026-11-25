@@ -1,0 +1,31 @@
+<i hidden data-blko-block="color-swatches"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{% assign st=section.settings %}{% assign ids=st.products | map: 'id' %}
+{% if st.products.size >= 2 and ids contains product.id %}
+<style>
+.blko-cs{max-width:1200px;margin-inline:auto;padding:40px 16px}
+.blko-cs .t{margin:0 0 12px}
+.blko-cs .w{display:flex;flex-wrap:wrap;gap:12px}
+.blko-cs a{display:block;width:48px;height:48px;border-radius:50%;overflow:hidden;border:1px solid rgba(0,0,0,.12);box-sizing:border-box}
+.blko-cs a.i{border-radius:12px;width:56px;height:56px}
+.blko-cs a[aria-current=true]{outline:2px solid var(--c);outline-offset:2px}
+.blko-cs img{width:100%;height:100%;object-fit:cover;display:block}
+</style>
+<div class="blko-cs" id="blko-cs-{{ section.id }}" style="--c:{{ st.color }}">
+<p class="t">{{ st.label }}: <strong>{{ product.title }}</strong></p>
+<div class="w">
+{% for p in st.products %}{% assign cur = false %}{% if p.id == product.id %}{% assign cur = true %}{% endif %}
+{% if st.style == 'image' %}<a class="i" href="{{ p.url }}" aria-label="{{ p.title | escape }}" title="{{ p.title | escape }}"{% if cur %} aria-current="true"{% endif %}>{% if p.featured_image %}<img src="{{ p.featured_image | image_url: width: 96 }}" alt="" width="96" height="96" loading="lazy">{% endif %}</a>
+{% else %}{% assign c = p.metafields.custom.swatch_color.value | default: p.metafields.custom.swatch_color %}{% unless c != blank %}{% assign c = p.title | split: ' - ' | last | split: ' ' | first | downcase %}{% endunless %}<a href="{{ p.url }}" aria-label="{{ p.title | escape }}" title="{{ p.title | escape }}" style="background:{{ c | escape }}"{% if cur %} aria-current="true"{% endif %}></a>
+{% endif %}{% endfor %}
+</div></div>
+{% endif %}
+{% schema %}
+{"name":"Blocko Color Swatches","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Color Swatches"}],
+"settings":[
+{"type":"product_list","id":"products","label":"Products (colors of one item)","limit":12},
+{"type":"text","id":"label","label":"Label","default":"Color"},
+{"type":"select","id":"style","label":"Swatch style","default":"image","options":[{"value":"image","label":"Product image"},{"value":"color","label":"Color circle"}]},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"Pick the products sold as colors of one item. Add this section to each of them."}]}
+{% endschema %}

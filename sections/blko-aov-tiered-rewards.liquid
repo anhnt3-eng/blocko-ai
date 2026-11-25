@@ -1,0 +1,51 @@
+<i hidden data-blko-block="aov-tiered-rewards"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+assign s = section.settings
+assign d = shop.metafields.avada_free_gifts.giftBoxDesignSetting.value
+assign now = 'now' | date: '%s' | plus: 0
+assign camp = nil
+for c in shop.metafields.avada_free_gifts.giftCampaigns.value
+if c.status == 'active' and c.triggerType == 'cart-value' and c.discountInformation.size > 0
+assign e = c.endDate | date: '%s' | plus: 0
+unless c.enabledEndDate and e < now
+assign camp = c
+break
+endunless
+endif
+endfor
+assign ti = camp.discountInformation | sort: 'triggerValue'
+-%}
+{%- if camp -%}
+<div class="blko-at" id="blko-at-{{ section.id }}">
+<style>.blko-at{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;color:{{ d.primaryTextColor | default: '#333' }}}.blko-at h3{margin:0}.blko-at p{margin:0 0 8px}.blko-at ul{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}.blko-at li{display:flex;justify-content:space-between;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:{{ d.inCompletedBgColor | default: '#fff' }};color:{{ d.inCompletedTextColor | default: '#1c1c1c' }}}.blko-at li.ok{background:{{ d.completedBgColor | default: '#1c1c1c' }};color:{{ d.completedIconColor | default: '#fff' }}}</style><h3>{{ s.header | default: d.headerText | escape }}</h3><p>{{ s.desc | default: d.descriptionText | escape }}</p><p></p><ul>
+{%- for t in ti -%}
+{%- liquid
+if t.discountType == 'percentage'
+assign disc = t.discountValue | append: '%'
+else
+assign disc = t.discountValue | times: 100 | money
+endif
+assign g = camp.giftProducts[forloop.index0]
+assign amt = t.triggerValue | times: 100 | money
+assign amt = s.spend | replace: '{amount}', amt
+if g
+assign reward = g.title
+else
+assign reward = t.rewardMessage | replace: '{{discount}}', disc
+endif
+-%}<li data-a="{{ t.triggerValue | times: 100 }}"><span>{{ amt | escape }}: {{ reward | escape }}</span><em></em></li>
+{%- endfor -%}</ul>
+</div>
+<script>(()=>{const r=document.getElementById('blko-at-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',F={{ shop.money_format | json }},P={{ d.progressMessage | json }},Z={{ d.promotionReachedMessage | json }},G={{ s.togo | json }};
+let q;const m=c=>F.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+u=async()=>{try{const v=(await(await fetch(R+'cart.js')).json()).items.filter(i=>!(i.properties&&i.properties._aovCampId)).reduce((a,i)=>a+i.final_line_price,0);let n;
+r.querySelectorAll('li').forEach(l=>{const a=+l.dataset.a,k=v>=a;l.classList.toggle('ok',k);l.lastChild.textContent=k?'✓':G.replace('{amount}',m(a-v));if(!k&&!n)n=a});
+r.querySelector('p+p').textContent=n?P.replace(/\{\{progress_amount\}\}/,m(n-v)).replace(/\{\{gift_number\}\}/,'1'):Z}catch(e){}},
+w=()=>{clearTimeout(q);q=setTimeout(u,350)};
+new PerformanceObserver(l=>l.getEntries().some(e=>/\/cart\/(add|change|update)/.test(e.name))&&w()).observe({entryTypes:['resource']});
+['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,w));u()})()</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko AOV Tiers","enabled_on":{"templates":["cart"]},"presets":[{"name":"Blocko AOV Tiers"}],"settings":[{"type":"paragraph","content":"Only DISPLAYS AOV.ai cart-value tiers and progress. Never adds gifts or codes (Blocko AOV Free Gift does that)."},{"type":"text","id":"header","label":"Header (blank=AOV.ai)"},{"type":"text","id":"desc","label":"Description (blank=AOV.ai)"},{"type":"text","id":"spend","label":"Tier label","default":"Spend {amount}"},{"type":"text","id":"togo","label":"To go text","default":"{amount} to go"}]}
+{% endschema %}

@@ -1,0 +1,41 @@
+<i hidden data-blko-block="waitlist"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- assign v0 = product.selected_or_first_available_variant -%}
+<div class="blko-wl" id="blko-wl-{{ section.id }}" hidden>
+<style>
+#blko-wl-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;--c:{{ section.settings.color }}}
+#blko-wl-{{ section.id }} .b{max-width:440px;padding:16px 20px;border:1px solid rgba(0,0,0,.12);border-radius:12px;border-left:4px solid var(--c)}
+#blko-wl-{{ section.id }} strong{display:block;font-size:16px}
+#blko-wl-{{ section.id }} .n,#blko-wl-{{ section.id }} .d{margin:4px 0 0;font-size:14px}
+#blko-wl-{{ section.id }} .n{color:var(--c);font-weight:600}
+</style>
+<div class="b">
+<strong>{{ section.settings.heading }}</strong>
+<p class="n" hidden></p>
+{%- if section.settings.date != blank -%}<p class="d">{{ section.settings.date_label }} {{ section.settings.date | escape }}</p>{%- endif -%}
+</div>
+</div>
+<script>
+(function(){
+var r=document.getElementById('blko-wl-{{ section.id }}'),V={{ product.variants | json }},
+R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
+n=r.querySelector('.n'),T={{ section.settings.count_text | json }},last,seq=0,hasDate={% if section.settings.date != blank %}true{% else %}false{% endif %};
+function cur(){var e=document.querySelector('form[action*="/cart/add"] [name="id"]'),
+id=(e&&e.value)||new URLSearchParams(location.search).get('variant')||'{{ v0.id }}';
+return V.filter(function(v){return String(v.id)===String(id)})[0]}
+function sync(){var v=cur();if(!v||v.id===last)return;last=v.id;n.hidden=true;r.hidden=v.available||!hasDate;
+if(v.available)return;var s=++seq;
+fetch(R+'apps/blocko/notify/count?variant_id='+v.id).then(function(x){return x.json()}).then(function(d){
+if(s!==seq||!d||!(d.count>0))return;n.textContent=T.replace('{n}',d.count);n.hidden=false;r.hidden=false}).catch(function(){})}
+sync();setInterval(sync,400);document.addEventListener('change',sync);
+})();
+</script>
+{% schema %}
+{"name":"Blocko Waitlist","settings":[
+{"type":"text","id":"heading","label":"Heading","default":"Currently sold out"},
+{"type":"text","id":"count_text","label":"Count text ({n} = number)","default":"{n} people are waiting"},
+{"type":"text","id":"date_label","label":"Restock date label","default":"Expected back:"},
+{"type":"text","id":"date","label":"Restock date (leave empty to hide)"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}],
+"presets":[{"name":"Blocko Waitlist"}],"enabled_on":{"templates":["product"]}}
+{% endschema %}

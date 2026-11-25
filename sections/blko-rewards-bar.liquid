@@ -1,0 +1,41 @@
+<i hidden data-blko-block="rewards-bar"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- if section.blocks.size > 0 -%}
+<style>
+.blko-rb{max-width:1200px;margin-inline:auto;padding:10px 16px;font:inherit;text-align:center}
+.blko-rb .m{margin:0 0 10px;font-size:14px}
+.blko-rb .k{position:relative;height:8px;margin:0 10px 10px;background:rgba(0,0,0,.12);border-radius:99px}
+.blko-rb .f{height:100%;width:0;background:var(--c);border-radius:99px;transition:width .3s}
+.blko-rb .d{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#fff;border:2px solid rgba(0,0,0,.2);box-sizing:border-box}
+.blko-rb .d.on{background:var(--c);border-color:var(--c)}
+</style>
+<div class="blko-rb" id="blko-rb-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
+<p class="m" aria-live="polite"></p>
+<div class="k"><div class="f"></div></div>
+{%- for b in section.blocks -%}<i hidden data-a="{{ b.settings.amount | times: 100 }}" data-l="{{ b.settings.label | escape }}" {{ b.shopify_attributes }}></i>{%- endfor -%}
+</div>
+<script>(()=>{var s=document.getElementById('blko-rb-{{ section.id }}'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',mf={{ shop.money_format | json }},cur={{ cart.currency.iso_code | json }},T={{ section.settings.text | json }},D={{ section.settings.done | json }},w;
+var ts=[].map.call(s.querySelectorAll('i[data-a]'),e=>({a:+e.dataset.a,l:e.dataset.l})).filter(t=>t.a>0).sort((x,y)=>x.a-y.a),mx=ts.length&&ts[ts.length-1].a;
+if(!ts.length)return;
+var k=s.querySelector('.k'),f=s.querySelector('.f'),m=s.querySelector('.m'),ds=ts.map(t=>{var d=document.createElement('span');d.className='d';d.style.left=t.a/mx*100+'%';d.title=t.l;k.appendChild(d);return d});
+function $(c){return window.Shopify&&Shopify.formatMoney?Shopify.formatMoney(c,mf):(c/100).toFixed(2)+' '+cur}
+function u(){fetch(r+'cart.js',{headers:{Accept:'application/json'}}).then(x=>x.json()).then(c=>{var p=c.total_price,n=null;
+ts.forEach((t,i)=>{var o=p>=t.a;ds[i].className='d'+(o?' on':'');if(!o&&!n)n=t});
+f.style.width=Math.min(p/mx,1)*100+'%';
+m.textContent=n?T.replace('{amount}',$(n.a-p)).replace('{label}',n.l):D;s.hidden=false}).catch(()=>{})}
+function q(){clearTimeout(w);w=setTimeout(u,150)}
+u();document.addEventListener('visibilitychange',()=>{document.hidden||q()});
+['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,q));
+if(window.PerformanceObserver)try{new PerformanceObserver(l=>{l.getEntries().some(e=>/\/cart\/(add|change|update)/.test(e.name))&&q()}).observe({type:'resource',buffered:false})}catch(e){}})();</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko Rewards Bar","enabled_on":{"groups":["header"]},"max_blocks":3,"presets":[{"name":"Blocko Rewards Bar","blocks":[{"type":"tier","settings":{"amount":50,"label":"Free shipping"}}]}],
+"blocks":[{"type":"tier","name":"Milestone","settings":[
+{"type":"number","id":"amount","label":"Spend amount (shop currency)","default":50},
+{"type":"text","id":"label","label":"Reward label","default":"Free shipping"}]}],
+"settings":[
+{"type":"text","id":"text","label":"Progress text","default":"Spend {amount} more for {label}"},
+{"type":"text","id":"done","label":"All unlocked text","default":"You unlocked everything"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"Rewards are display only. Create the matching shipping rate or automatic discounts (same minimum spend) so checkout gives the reward."}]}
+{% endschema %}

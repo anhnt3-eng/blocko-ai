@@ -1,0 +1,36 @@
+<i hidden data-blko-block="subscription-box"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{% assign st=section.settings %}{% assign g=product.selling_plan_groups.first %}{% assign pa=g.selling_plans[0].id %}{% assign pb=g.selling_plans[1].id|default:pa %}
+<style>
+.blko-sb{max-width:1200px;margin-inline:auto;padding:40px 16px;
+>*{max-width:520px}
+.f{display:flex;gap:4px;padding:4px;margin-bottom:14px;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+.f button{flex:1;padding:9px;border:0;border-radius:9px;background:none;color:#17151d;font:inherit;cursor:pointer}
+.f .on{background:var(--c);color:#fff}
+.r{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+& img{width:36px;height:36px;border-radius:8px;object-fit:cover}
+.a{display:block;padding:12px;border-radius:99px;background:#17151d;color:#fff;text-align:center;text-decoration:none}
+& p{opacity:.7;font-size:.9em}}
+</style>
+<div class="blko-sb" id="blko-sb-{{ section.id }}" style="--c:{{ st.color }}">
+<h2>{{ st.heading }}</h2>
+<div class="f"><button type="button" class="on" data-p="{{ pa }}">{{ st.f1 }}</button><button type="button" data-p="{{ pb }}">{{ st.f2 }}</button></div>
+{% for p in st.list limit:3 %}<div class="r"><img width="72" height="72" src="{{ p.featured_image|image_url:width:72 }}" alt=""><strong>{{ p.title|escape }}</strong></div>{% endfor %}
+{% if g %}<a class="a" href="{{ product.url }}?selling_plan={{ pa }}">{{ st.button }}</a>{% else %}<p>{{ st.note }}</p>{% endif %}
+{% if st.foot != blank %}<p>{{ st.foot }}</p>{% endif %}
+</div>
+<script>(()=>{var s=document.getElementById('blko-sb-{{ section.id }}'),a=s.querySelector('.a'),B=s.querySelectorAll('.f button');
+B.forEach(x=>x.onclick=()=>{B.forEach(y=>y.classList.toggle('on',y==x));if(a)a.href='{{ product.url }}?selling_plan='+x.dataset.p})})();</script>
+{% schema %}
+{"name":"Blocko Subscription Box","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Subscription Box"}],
+"settings":[
+{"type":"text","id":"heading","label":"Heading","default":"Subscribe and get the box"},
+{"type":"text","id":"f1","label":"Frequency 1","default":"Every month"},
+{"type":"text","id":"f2","label":"Frequency 2","default":"Every 2 months"},
+{"type":"product_list","id":"list","label":"Products in the box","limit":3},
+{"type":"text","id":"button","label":"Subscribe button","default":"Subscribe"},
+{"type":"text","id":"note","label":"No selling plan note","default":"Subscriptions are not set up for this product yet."},
+{"type":"text","id":"foot","label":"Footnote"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"The Subscribe button shows only if this product has a selling plan (Shopify subscription app). Plan 1 and 2 of its first group match the two frequencies."}]}
+{% endschema %}

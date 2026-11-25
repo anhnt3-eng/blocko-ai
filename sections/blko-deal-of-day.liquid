@@ -1,0 +1,46 @@
+<i hidden data-blko-block="deal-of-day"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- assign p = section.settings.product -%}
+{%- if p != blank and section.settings.end != blank -%}
+{%- assign av = p.variants | where: 'available' | first | default: p.variants.first -%}
+<style>
+.blko-dd{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}
+.blko-dd .c{display:flex;flex-wrap:wrap;gap:20px;max-width:720px;padding:20px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+.blko-dd img{width:160px;height:auto;border-radius:12px}
+.blko-dd .i{flex:1;min-width:200px}.blko-dd h2{margin:0 0 6px;color:var(--c)}.blko-dd s{opacity:.6;margin:0 6px}
+.blko-dd .t{display:flex;gap:8px;margin:12px 0}
+.blko-dd .t span{min-width:50px;padding:8px 4px;text-align:center;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+.blko-dd b{display:block;font-size:20px;color:var(--c)}
+.blko-dd button{width:100%;padding:12px;border:0;border-radius:12px;background:var(--c);color:#fff;font:inherit;cursor:pointer}
+</style>
+<div class="blko-dd" id="blko-dd-{{ section.id }}" data-end="{{ section.settings.end | escape }}" style="--c:{{ section.settings.color }}" hidden>
+<div class="c">
+{%- if p.featured_image -%}<img src="{{ p.featured_image | image_url: width: 320 }}" width="160" height="{{ 160 | divided_by: p.featured_image.aspect_ratio | round }}" alt="{{ p.title | escape }}">{%- endif -%}<div class="i"><h2>{{ section.settings.heading }}</h2><strong>{{ p.title }}</strong>
+{{ av.price | money }}{%- if av.compare_at_price > av.price -%}<s>{{ av.compare_at_price | money }}</s>{%- endif -%}
+<div class="t">{%- assign u = section.settings.units | split: ',' -%}{%- for x in u -%}<span><b></b>{{ x }}</span>{%- endfor -%}</div>
+<button type="button"{% unless av.available %} disabled{% endunless %}>{% if av.available %}{{ section.settings.button }}{% else %}{{ section.settings.soldout }}{% endif %}</button>
+</div></div></div>
+<script>(function(){var r=document.getElementById('blko-dd-{{ section.id }}'),
+R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',b=r.querySelector('button'),q,
+T=new Date(r.dataset.end.trim().replace(' ','T')+':00{{ 'now' | date: '%:z' }}').getTime(),B=r.querySelectorAll('.t b');
+if(isNaN(T)||T<=Date.now())return;r.hidden=false;
+function tick(){var d=~~((T-Date.now())/1e3);if(d<=0){r.hidden=true;clearInterval(q);return}
+[d/86400,d/3600%24,d/60%60,d%60].forEach(function(n,i){if(B[i])B[i].textContent=Math.floor(n)})}
+tick();q=setInterval(tick,1e3);
+b.onclick=function(){b.disabled=true;
+fetch(R+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:{{ av.id }},quantity:1})})
+.then(function(x){if(!x.ok)throw 0;document.dispatchEvent(new CustomEvent('blko:cart:open'));document.dispatchEvent(new CustomEvent('blko:cart:changed'));b.disabled=false})
+.catch(function(){location.href=R+'cart'})}})();</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko Deal of the Day","enabled_on":{"templates":["index","product"]},"presets":[{"name":"Blocko Deal of the Day"}],
+"settings":[
+{"type":"product","id":"product","label":"Product"},
+{"type":"text","id":"heading","label":"Heading","default":"Deal of the day"},
+{"type":"text","id":"end","label":"End date and time","info":"YYYY-MM-DD HH:MM, shop time zone."},
+{"type":"text","id":"button","label":"Button label","default":"Add to cart"},
+{"type":"text","id":"soldout","label":"Sold out text","default":"Sold out"},
+{"type":"text","id":"units","label":"Timer labels","default":"days,hrs,min,sec"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"paragraph","content":"Shows the product's real price. Create the sale in Shopify (compare-at price or automatic discount)."}]}
+{% endschema %}
