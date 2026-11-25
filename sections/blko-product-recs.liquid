@@ -9,21 +9,26 @@
 .blko-pr img{width:64px;height:64px;object-fit:cover;border-radius:8px}
 .blko-pr .g{flex:1;min-width:0;display:grid;gap:2px}
 .blko-pr a{color:inherit;text-decoration:none;font-weight:600}
+.blko-pr .g span{opacity:.7;font-size:.9em}
 .blko-pr button{padding:9px 18px;border:0;border-radius:99px;background:var(--c);color:#fff;font:inherit;cursor:pointer}
 .blko-pr button:disabled{opacity:.7;cursor:default}
 </style>
 <div class="blko-pr" id="blko-pr-{{ section.id }}" style="--c:{{ st.color }}" hidden>
 <h2>{{ st.heading }}</h2><div class="l"></div>
 </div>
-<script>(()=>{var s=document.getElementById('blko-pr-{{ section.id }}'),L=s.querySelector('.l'),N={{ st.limit }},A={{ st.add|json }},D={{ st.added|json }},r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
+<script>(()=>{var s=document.getElementById('blko-pr-{{ section.id }}'),L=s.querySelector('.l'),N={{ st.limit }},A={{ st.add|json }},D={{ st.added|json }},W={{ st.price_text|json }},r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',o,
 m=c=>{{ shop.money_format|json }}.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
-g=i=>fetch(r+'recommendations/products.json?product_id={{ product.id }}&limit='+N+'&intent='+i).then(x=>x.json()).then(j=>(j.products||[]).filter(p=>p.available&&p.variants.some(v=>v.available)).slice(0,N));
-function row(p){var v=p.variants.find(v=>v.available),d=document.createElement('div'),i=document.createElement('img'),t=document.createElement('div'),a=document.createElement('a'),c=document.createElement('span'),b=document.createElement('button');
+ok=a=>a.filter(p=>p&&p.available!==false&&p.variants.some(v=>v.available)),
+g=i=>fetch(r+'recommendations/products.json?product_id={{ product.id }}&limit='+N+'&intent='+i).then(x=>x.json()).then(j=>ok(j.products||[]).slice(0,N));
+if({{ st.use_aov|json }})try{o={{ shop.metafields.avada_bundle.offer|json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='upsell'&&x.page==='product_page'&&x.status==='active'&&(x.triggerCondition==='all-products'||(x.triggerProducts||[]).some(p=>String(p.id)==='{{ product.id }}')))}catch(x){o=0}
+function row(p){var v=p.variants.find(v=>v.available),d=document.createElement('div'),i=document.createElement('img'),t=document.createElement('div'),a=document.createElement('a'),c=document.createElement('span'),b=document.createElement('button'),x=m(v.price);
 d.className='r';t.className='g';i.alt='';i.width=i.height=160;if(p.featured_image)i.src=p.featured_image+(p.featured_image.indexOf('?')<0?'?':'&')+'width=160';
-a.href=p.url;a.textContent=p.title;c.textContent=m(v.price);b.type='button';b.textContent=A;
-b.onclick=()=>{b.disabled=true;fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[{id:v.id,quantity:1}]})}).then(x=>{if(!x.ok)throw 0;b.textContent=D;document.dispatchEvent(new CustomEvent('cart:refresh',{bubbles:true}))}).catch(()=>{b.disabled=false})};
+if(o&&o.enabledDiscount)x=W.replace('[was]',m(v.price)).replace('[now]',m(o.discountType==='percentage'?v.price*(100-o.discountValue)/100:Math.max(0,v.price-o.discountValue*100)));
+a.href=p.url;a.textContent=p.title;c.textContent=x;b.type='button';b.textContent=A;
+b.onclick=()=>{b.disabled=true;fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[o?{id:v.id,quantity:1,properties:{_aov_bundles:JSON.stringify({offerId:o.id,isUpsell:true})}}:{id:v.id,quantity:1}]})}).then(x=>{if(!x.ok)throw 0;b.textContent=D;document.dispatchEvent(new CustomEvent('cart:refresh',{bubbles:true}));document.dispatchEvent(new CustomEvent('blko:cart:changed'))}).catch(()=>{b.disabled=false})};
 t.append(a,c);d.append(i,t,b);L.append(d)}
-g('complementary').then(a=>a.length?a:g('related')).then(a=>{if(!a.length)return;a.forEach(row);s.hidden=false}).catch(()=>{})})();</script>
+(o?Promise.all((o.upsellProducts||[]).filter(u=>u.handle!=={{ product.handle|json }}).slice(0,o.productsPerPage||3).map(u=>fetch(r+'products/'+u.handle+'.js').then(x=>x.json()).catch(()=>0))).then(ok).then(a=>{s.querySelector('h2').textContent=o.offerTitle||'';return a}):g('complementary').then(a=>a.length?a:g('related'))).then(a=>{if(!a.length)return;a.forEach(row);s.hidden=false}).catch(()=>{})})();</script>
 {% schema %}
 {"name":"Blocko Product Recs","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Product Recs"}],
 "settings":[
@@ -31,6 +36,8 @@ g('complementary').then(a=>a.length?a:g('related')).then(a=>{if(!a.length)return
 {"type":"range","id":"limit","label":"Products","min":2,"max":6,"step":1,"default":3},
 {"type":"text","id":"add","label":"Button text","default":"Add"},
 {"type":"text","id":"added","label":"Button text after adding","default":"Added"},
+{"type":"text","id":"price_text","label":"AOV.ai discount price text","default":"Was [was], now [now]"},
 {"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Uses Shopify's product recommendations. Set complementary products in the Search & Discovery app for best results."}]}
+{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when there is one","default":true},
+{"type":"paragraph","content":"Two modes. Default: Shopify's product recommendations (set complementary products in the Search & Discovery app for best results). With AOV.ai Bundle: when an active AOV.ai Product recommendation offer triggers on this product, this block shows that offer's products with its Was/now prices; the discount applies automatically in the cart, no code needed. Turn off AOV.ai's own widget to avoid a duplicate."}]}
 {% endschema %}

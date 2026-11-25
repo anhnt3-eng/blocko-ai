@@ -1,6 +1,7 @@
 <i hidden data-blko-block="build-a-box"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
 {% assign st=section.settings %}
+{%- capture gj -%}[{% assign sp='' %}{% for p in st.collection.products limit:8 %}{% if p.available %}{{ sp }}{"id":{{ p.first_available_variant.id }},"p":{{ p.first_available_variant.price }},"q":0,"t":{{ p.title|json }},"i":{{ p.featured_image|image_url:width:96|json }}}{% assign sp=',' %}{% endif %}{% endfor %}]{%- endcapture -%}
 <style>
 .blko-bb{max-width:1200px;margin-inline:auto;padding:40px 16px;
 >*{max-width:520px}
@@ -9,24 +10,44 @@
 .on{border-color:var(--c)}
 & img{width:48px;height:48px;flex:none;border-radius:8px;object-fit:cover}
 & span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+& em{margin-left:auto;font-style:normal;font-weight:600}
+& .m{flex:none;width:28px;height:28px;border:1px solid rgba(0,0,0,.12);border-radius:50%;background:#fff;color:#17151d;font:inherit;cursor:pointer}
 & progress{width:100%;margin:6px 0 16px;accent-color:var(--c)}
 .a{width:100%;padding:12px;border:0;border-radius:99px;background:#17151d;color:#fff;font:inherit;cursor:pointer;&:disabled{opacity:.5}}}
 </style>
-<div class="blko-bb" id="blko-bb-{{ section.id }}" style="--c:{{ st.color }}">
+<div class="blko-bb" id="blko-bb-{{ section.id }}" style="--c:{{ st.color }}" hidden>
 <h2>{{ st.heading }}</h2>
-<div class="gr">{% for p in st.collection.products limit:8 %}{% if p.available %}<button type="button" class="t" data-id="{{ p.first_available_variant.id }}" data-p="{{ p.first_available_variant.price }}"><img width="96" height="96" src="{{ p.featured_image|image_url:width:96 }}" alt=""><span>{{ p.title|escape }}</span></button>{% endif %}{% endfor %}</div>
+<div class="gr"></div>
 <div class="n"></div><progress max="{{ st.size }}" value="0"></progress>
 <button type="button" class="a"></button>
 </div>
-<script>(()=>{var s=document.getElementById('blko-bb-{{ section.id }}'),b=s.querySelector('.a'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',N={{ st.size }},M={{ st.mid }},F={{ st.full }},k=[],
+<script>(async()=>{var s=document.getElementById('blko-bb-{{ section.id }}'),$=x=>s.querySelector(x),b=$('.a'),gr=$('.gr'),pg=$('progress'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},N={{ st.size }},
+L={{ gj }},T=[{quantity:2,discountValue:{{ st.mid }}},{quantity:N,discountValue:{{ st.full }}}],pc=1,need=N,o,
 m=c=>{{ shop.money_format|json }}.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
-u=()=>{var n=k.length,d=n>=N?F:n>1?M:0,t=k.reduce((a,x)=>a+ +x.dataset.p,0)*(100-d)/100|0;
-s.querySelector('.n').textContent={{ st.progress|json }}.replace('{n}',n).replace('{max}',N)+(d?' · '+{{ st.off|json }}.replace('{off}',d):'');
-s.querySelector('progress').value=n;b.disabled=n<N;
-b.textContent=(n<N?{{ st.pick|json }}.replace('{n}',N-n):{{ st.add|json }}).replace('{price}',m(t))};
-s.querySelectorAll('.t').forEach(x=>x.onclick=()=>{var i=k.indexOf(x);if(i>-1)k.splice(i,1);else if(k.length<N)k.push(x);x.classList.toggle('on',k.includes(x));u()});u();
-b.onclick=()=>{b.disabled=true;
-fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:k.map(x=>({id:+x.dataset.id,quantity:1}))})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description})}})();</script>
+e=(g,x,p)=>{var n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n};
+if({{ st.use_aov|json }})try{o={{ shop.metafields.avada_bundle.offer|json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='bundle-builder'&&(!x.status||x.status==='active')&&x.bundleBuilderProductHandle==={{ product.handle|json }}&&(x.discountOptions||[]).length);
+if(o){var A=(await Promise.all((o.offerProducts||[]).map(p=>fetch(r+'products/'+p.handle+'.js').then(r=>r.json()).catch(()=>0)))).map(p=>{var v=p&&p.variants.find(v=>v.available);return v&&{id:v.id,p:v.price,q:0,t:p.title,i:p.featured_image&&p.featured_image+(p.featured_image.indexOf('?')<0?'?':'&')+'width=96'}}).filter(Boolean);
+if(A.length){L=A;T=o.discountOptions.slice().sort((a,c)=>a.quantity-c.quantity);pc=o.discountType!=='fixed';need=T[0].quantity;$('h2').textContent=o.offerTitle||''}else o=0}}catch(x){o=0}
+var lb=t=>pc?t.discountValue+'%':m(t.discountValue*100),
+u=()=>{var n=0,t=0;L.forEach(i=>{n+=i.q;t+=i.q*i.p;i.x.classList.toggle('on',i.q>0);i.c.textContent=o&&i.q?i.q:'';i.d.hidden=!(o&&i.q)});
+var cu=T.filter(x=>x.quantity<=n).pop(),nx=T.find(x=>x.quantity>n),d=cu?pc?t*cu.discountValue/100:Math.min(t,cu.discountValue*100):0;
+$('.n').textContent=o?nx?'Add '+(nx.quantity-n)+' more to save '+lb(nx):'You save '+lb(cu):{{ st.progress|json }}.replace('{n}',n).replace('{max}',N)+(cu&&cu.discountValue?' · '+{{ st.off|json }}.replace('{off}',cu.discountValue):'');
+pg.max=o?nx?nx.quantity:n||1:N;pg.value=n;b.disabled=n<need;
+b.textContent=(n<need?{{ st.pick|json }}.replace('{n}',need-n):{{ st.add|json }}).replace('{price}',m(Math.round(t-d)))};
+L.forEach(c=>{var x=c.x=e('div',0,gr),i;x.className='t';x.tabIndex=0;x.setAttribute('role','button');
+if(c.i){i=e('img',0,x);i.src=c.i;i.alt='';i.width=i.height=96}e('span',c.t,x);c.c=e('em',0,x);
+c.d=e('button','−',x);c.d.type='button';c.d.className='m';
+x.onclick=()=>{if(o)c.q++;else c.q=c.q?0:L.reduce((a,y)=>a+y.q,0)<N?1:0;u()};
+x.onkeydown=ev=>{if(ev.key==='Enter'&&ev.target==x)x.click()};
+c.d.onclick=ev=>{ev.stopPropagation();c.q=o?c.q-1:0;u()}});
+u();s.hidden=false;
+b.onclick=async()=>{b.disabled=true;try{var z=Math.random().toString(36).slice(2,7),
+items=L.filter(i=>i.q).map(i=>o?{id:i.id,quantity:i.q,properties:{_aov_offerId:o.id,_aov_offerType:'bundle-builder',_aov_bundleGroup:o.id+'|'+z+'|'}}:{id:i.id,quantity:1}),
+a=await fetch(r+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify({items})});if(!a.ok)throw await a.json();
+if(o&&o.code){var c=(await(await fetch(r+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
+await fetch(r+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
+location.href=r+'cart'}catch(x){u();b.textContent=x.description||b.textContent}}})();</script>
 {% schema %}
 {"name":"Blocko Build a Box","enabled_on":{"templates":["product","page"]},"presets":[{"name":"Blocko Build a Box"}],
 "settings":[
@@ -40,5 +61,6 @@ fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'}
 {"type":"text","id":"pick","label":"Button before full","default":"Pick {n} more"},
 {"type":"text","id":"add","label":"Button when full","default":"Add box · {price}"},
 {"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Savings are display only. Create a matching Shopify automatic discount so checkout charges it."}]}
+{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when there is one","default":true},
+{"type":"paragraph","content":"Two modes. Default: pick items from the collection with the savings above (display only: create a matching Shopify automatic discount so checkout charges it). With AOV.ai Bundle: on the product page of an active AOV.ai Bundle builder offer, this block shows that offer's products with quantity steppers and its discount tiers, adds them with its code, and ignores the collection and savings. Turn off AOV.ai's own widget to avoid a duplicate."}]}
 {% endschema %}

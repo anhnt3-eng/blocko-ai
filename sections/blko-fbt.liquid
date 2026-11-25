@@ -1,38 +1,56 @@
 <i hidden data-blko-block="fbt"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
-{% assign st=section.settings %}{% assign v=product.selected_or_first_available_variant %}
+{%- assign st = section.settings -%}
 <style>
-.blko-fb{max-width:1200px;margin-inline:auto;padding:40px 16px}
-.blko-fb>*{max-width:520px}
+.blko-fb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}
+.blko-fb>*{max-width:520px}.blko-fb p{opacity:.7;margin:0 0 14px}
 .blko-fb .r{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}
 .blko-fb input{accent-color:var(--c)}.blko-fb .g{flex:1}
-.blko-fb img{width:40px;height:40px;border-radius:8px}
+.blko-fb img{width:40px;height:40px;border-radius:8px;object-fit:cover}
 .blko-fb button{width:100%;padding:12px;border:0;border-radius:99px;background:#17151d;color:#fff;font:inherit;cursor:pointer}
 </style>
-<div class="blko-fb" id="blko-fb-{{ section.id }}" style="--c:{{ st.color }}">
-<h2>{{ st.heading }}</h2><div class="l">
-<label class="r"><input type="checkbox" value="{{ v.id }}" data-p="{{ v.price }}" checked disabled><img width="80" height="80" src="{{ product.featured_image|image_url:width:80 }}" alt=""><span class="g">{{ st.this }}: {{ product.title|escape }}</span><strong>{{ v.price|money }}</strong></label>
-{% for p in st.list %}{% assign w=p.first_available_variant %}{% if p.available %}
-<label class="r"><input type="checkbox" value="{{ w.id }}" data-p="{{ w.price }}" checked><img width="80" height="80" src="{{ p.featured_image|image_url:width:80 }}" alt=""><span class="g">{{ p.title|escape }}</span><strong>{{ w.price|money }}</strong></label>
-{% endif %}{% endfor %}</div>
-<button type="button"></button>
-</div>
-<script>(()=>{var T={{ st.button|json }},s=document.getElementById('blko-fb-{{ section.id }}'),L=s.querySelector('.l'),b=s.querySelector('button'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
-m=c=>{{ shop.money_format|json }}.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
-u=()=>{var a=[...L.querySelectorAll('input')],k=a.filter(i=>i.checked),t=k.reduce((n,i)=>n+ +i.dataset.p,0);if(k.length==a.length&&a.length>1)t=t*(100-{{ st.off }})/100|0;
-b.textContent=T.replace('{n}',k.length).replace('{price}',m(t))};
-s.onchange=u;u();
-if(!L.querySelector('input:not(:disabled)'))fetch(r+'recommendations/products.json?product_id={{ product.id }}&limit=2&intent=complementary').then(x=>x.json()).then(j=>{j.products.filter(p=>p.available).forEach(p=>{var l=L.firstElementChild.cloneNode(true),i=l.querySelector('input'),q=n=>l.querySelector(n);i.disabled=false;i.value=(p.variants.find(v=>v.available)||p.variants[0]).id;i.dataset.p=p.price;q('img').src=p.featured_image;q('.g').textContent=p.title;q('strong').textContent=m(p.price);L.append(l)});u()});
-b.onclick=()=>{b.disabled=true;
-fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[...L.querySelectorAll('input:checked')].map(i=>({id:+i.value,quantity:1}))})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description||T})}})();</script>
+<div class="blko-fb" id="blko-fb-{{ section.id }}" style="--c:{{ st.color }}"><h2></h2><p></p><div class="l"></div><button type="button"></button></div>
+<script>(async()=>{
+const s=document.getElementById('blko-fb-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},
+M={{ shop.money_format | json }},T={{ st.button | json }},b=s.querySelector('button'),L=s.querySelector('.l'),
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+F=()=>document.querySelector('form[action*="/cart/add"] [name=id]'),
+e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n},
+add=(p,t)=>{const v=p.variants.find(v=>v.available)||p.variants[0];I.push({id:v.id,price:v.price,title:p.title,img:p.featured_image,t})};
+let o;if({{ st.use_aov | json }})try{o={{ shop.metafields.avada_bundle.offer | json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='fbt'&&x.status==='active'&&(x.triggerCondition==='all-products'||(x.triggerProducts||[]).some(p=>String(p.id)==='{{ product.id }}')))}catch(x){}
+const I=[{id:{{ product.selected_or_first_available_variant.id }},price:{{ product.selected_or_first_available_variant.price }},title:{{ product.title | json }},img:{{ product.featured_image | image_url: width: 80 | json }},t:1}];
+if(o){const ps=(await Promise.all((o.offerProducts||[]).map(p=>fetch(R+'products/'+p.handle+'.js').then(r=>r.ok?r.json():null).catch(()=>null)))).filter(p=>p&&p.available);
+if(ps.length)ps.forEach(p=>add(p,0));else o=0}
+if(!o){I.push(...[{%- for p in st.list -%}{%- if p.available and p.id != product.id -%}{%- assign w = p.first_available_variant -%}{id:{{ w.id }},price:{{ w.price }},title:{{ p.title | json }},img:{{ p.featured_image | image_url: width: 80 | json }},t:0},{%- endif -%}{%- endfor -%}]);
+if(I.length<2)try{(await(await fetch(R+'recommendations/products.json?product_id={{ product.id }}&limit=2&intent=complementary')).json()).products.filter(p=>p.available).forEach(p=>add(p,0))}catch(x){}}
+const pc=!o||o.discountType==='percentage',dv=o?(o.enabledDiscount?o.discountValue||0:0):{{ st.off }},
+vt=pc?dv+'%':m(dv*100);
+s.querySelector('h2').textContent=o?o.offerTitle||'':{{ st.heading | json }};
+const dp=s.querySelector('p');dp.textContent=o?(o.offerDescription||'').replace(/\{\{\s*value_discount\s*\}\}/,vt):'';dp.hidden=!dp.textContent;
+const C=I.map(i=>{const l=e('label',0,L),k=e('input',0,l);l.className='r';k.type='checkbox';k.checked=!o||o.autoSelectOfferedItems!==false||!!i.t;k.disabled=!!i.t;k.onchange=u;
+if(i.img)e('img',0,l).src=i.img;e('span',(o||!i.t?'':{{ st.this | append: ': ' | json }})+i.title,l).className='g';e('strong',m(i.price),l);return k});
+const sel=()=>I.filter((x,n)=>C[n].checked);
+function u(){const a=sel(),w=a.reduce((n,i)=>n+i.price,0);let t=w;
+if(dv&&a.length>1&&(o||a.length==I.length))t=pc?w*(100-dv)/100|0:Math.max(0,w-dv*100);
+b.textContent=T.replace('{n}',a.length).replace('{price}',m(t))}
+u();
+b.onclick=async()=>{b.disabled=true;try{const a=sel(),f=F(),g=Array.from({length:3},()=>String.fromCharCode(65+Math.random()*26|0)).join(''),
+items=a.map(i=>{const x={id:i.t&&f&&f.value?+f.value:i.id,quantity:1};
+if(o){const p={offerId:o.id,groupKey:g,minQty:a.length};if(i.t)p.isTrigger=true;x.properties={_aov_bundles:JSON.stringify(p)}}return x});
+const r=await fetch(R+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify({items})});if(!r.ok)throw await r.json();
+if(o&&o.code&&a.length>1){const c=(await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
+await fetch(R+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
+location.href=R+'cart'}catch(x){b.disabled=false;x.description?b.textContent=x.description:u()}}})();</script>
 {% schema %}
 {"name":"Blocko Bought Together","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Bought Together"}],
 "settings":[
+{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when this product has one","default":true},
 {"type":"text","id":"heading","label":"Heading","default":"Frequently bought together"},
 {"type":"text","id":"this","label":"This item label","default":"This item"},
 {"type":"product_list","id":"list","label":"Add-ons (empty = auto)","limit":2},
 {"type":"range","id":"off","label":"Saving % if all checked","min":0,"max":50,"default":10},
 {"type":"text","id":"button","label":"Button ({n}, {price})","default":"Add {n} to cart · {price}"},
 {"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Savings are display only. Create a matching Shopify automatic discount so checkout charges it."}]}
+{"type":"paragraph","content":"AOV mode: if this product has an active AOV.ai FBT offer, products, text, discount and code come from it. Settings mode: otherwise the add-ons and saving above are display only, so create a matching Shopify automatic discount for checkout."}]}
 {% endschema %}

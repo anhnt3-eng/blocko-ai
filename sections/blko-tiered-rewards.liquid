@@ -1,0 +1,92 @@
+<i hidden data-blko-block="tiered-rewards"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign s = section.settings
+  assign now = 'now' | date: '%s' | plus: 0
+  assign camp = nil
+  if s.use_aov
+    for c in shop.metafields.avada_free_gifts.giftCampaigns.value
+      if c.status == 'active' and c.triggerType == 'cart-value' and c.discountInformation.size > 0
+        assign e = c.endDate | date: '%s' | plus: 0
+        unless c.enabledEndDate and e < now
+          assign camp = c
+          break
+        endunless
+      endif
+    endfor
+  endif
+  assign d = shop.metafields.avada_free_gifts.giftBoxDesignSetting.value
+  assign head = s.header | default: 'Rewards'
+  assign desc = s.desc
+  assign pm = s.progress
+  assign zm = s.done
+  assign txc = '#333'
+  assign pbg = '#fff'
+  assign ptx = '#1c1c1c'
+  assign dbg = '#1c1c1c'
+  assign dtx = '#fff'
+  assign amts = ''
+  assign lbls = ''
+  if camp
+    assign head = s.header | default: d.headerText
+    assign desc = s.desc | default: d.descriptionText
+    assign pm = d.progressMessage | default: s.progress
+    assign zm = d.promotionReachedMessage | default: s.done
+    assign txc = d.primaryTextColor | default: txc
+    assign pbg = d.inCompletedBgColor | default: pbg
+    assign ptx = d.inCompletedTextColor | default: ptx
+    assign dbg = d.completedBgColor | default: dbg
+    assign dtx = d.completedIconColor | default: dtx
+    assign ti = camp.discountInformation | sort: 'triggerValue'
+    for t in ti
+      if t.discountType == 'percentage'
+        assign disc = t.discountValue | append: '%'
+      else
+        assign disc = t.discountValue | times: 100 | money
+      endif
+      assign g = camp.giftProducts[forloop.index0]
+      if g
+        assign reward = g.title
+      else
+        assign reward = t.rewardMessage | replace: '{{discount}}', disc
+      endif
+      assign tv = t.triggerValue | times: 100 | round
+      assign amts = amts | append: tv | append: '~'
+      assign lbls = lbls | append: reward | append: '~'
+    endfor
+  else
+    assign v1 = s.a1 | times: 100 | round
+    assign v2 = s.a2 | times: 100 | round
+    assign v3 = s.a3 | times: 100 | round
+    assign amts = v1 | append: '~' | append: v2 | append: '~' | append: v3 | append: '~'
+    assign lbls = s.l1 | append: '~' | append: s.l2 | append: '~' | append: s.l3 | append: '~'
+  endif
+  assign al = amts | split: '~'
+  assign ll = lbls | split: '~'
+-%}
+{%- if al.size > 0 -%}
+<div class="blko-tr" id="blko-tr-{{ section.id }}">
+<style>.blko-tr{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;color:{{ txc }}}.blko-tr h3{margin:0}.blko-tr p{margin:0 0 8px}.blko-tr ul{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}.blko-tr li{display:flex;justify-content:space-between;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:{{ pbg }};color:{{ ptx }}}.blko-tr li.ok{background:{{ dbg }};color:{{ dtx }}}</style><h3>{{ head | escape }}</h3><p>{{ desc | escape }}</p><p></p><ul>
+{%- for a in al -%}
+{%- assign cents = a | plus: 0 -%}
+{%- if cents > 0 -%}
+{%- liquid
+  assign amt = cents | money
+  assign row = s.spend | replace: '{amount}', amt
+  assign lb = ll[forloop.index0]
+-%}<li data-a="{{ cents }}"><span>{{ row | escape }}{% if lb != blank %}: {{ lb | escape }}{% endif %}</span><em></em></li>
+{%- endif -%}
+{%- endfor -%}</ul>
+</div>
+<script>(()=>{const r=document.getElementById('blko-tr-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',F={{ shop.money_format | json }},P={{ pm | json }},Z={{ zm | json }},G={{ s.togo | json }};
+let q;const m=c=>F.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+u=async()=>{try{const v=(await(await fetch(R+'cart.js')).json()).items.filter(i=>!(i.properties&&(i.properties._aovCampId||i.properties._blko_gift))).reduce((a,i)=>a+i.final_line_price,0);let n;
+r.querySelectorAll('li').forEach(l=>{const a=+l.dataset.a,k=v>=a;l.classList.toggle('ok',k);l.lastChild.textContent=k?'✓':G.replace('{amount}',m(a-v));if(!k&&!n)n=a});
+r.querySelector('p+p').textContent=n?P.replace(/\{\{?(?:progress_amount|amount)\}\}?/,m(n-v)).replace(/\{\{?gift_number\}\}?/,'1'):Z}catch(e){}},
+w=()=>{clearTimeout(q);q=setTimeout(u,350)};
+new PerformanceObserver(l=>l.getEntries().some(e=>/\/cart\/(add|change|update)/.test(e.name))&&w()).observe({entryTypes:['resource']});
+['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,w));u()})()</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko Tiered Rewards","enabled_on":{"templates":["cart","product"]},"presets":[{"name":"Blocko Tiered Rewards"}],"settings":[{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai cart-value campaign it lists that campaign's tiers and progress. Settings mode: up to 3 tiers below, smallest amount first. It only DISPLAYS tiers; create the matching Shopify discounts or gifts so checkout delivers them."},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},{"type":"text","id":"header","label":"Header (blank = AOV.ai / Rewards)"},{"type":"text","id":"desc","label":"Description (blank = AOV.ai)"},{"type":"text","id":"spend","label":"Tier label","default":"Spend {amount}"},{"type":"text","id":"togo","label":"To go text","default":"{amount} to go"},{"type":"text","id":"progress","label":"Progress text","default":"Spend {amount} more for your next reward"},{"type":"text","id":"done","label":"All unlocked text","default":"You unlocked every reward"},{"type":"number","id":"a1","label":"Tier 1 amount (shop currency)","default":30},{"type":"text","id":"l1","label":"Tier 1 reward","default":"Free shipping"},{"type":"number","id":"a2","label":"Tier 2 amount"},{"type":"text","id":"l2","label":"Tier 2 reward"},{"type":"number","id":"a3","label":"Tier 3 amount"},{"type":"text","id":"l3","label":"Tier 3 reward"}]}
+{% endschema %}

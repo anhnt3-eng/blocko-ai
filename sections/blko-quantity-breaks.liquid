@@ -1,6 +1,6 @@
 <i hidden data-blko-block="quantity-breaks"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
-{%- assign v = product.selected_or_first_available_variant -%}
+{%- assign st = section.settings -%}
 <style>
 .blko-qb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}
 .blko-qb>*{max-width:520px}.blko-qb h2{margin:0 0 20px}
@@ -10,26 +10,40 @@
 .blko-qb .t{position:absolute;top:-9px;right:14px;background:var(--c);color:#fff;font-size:10px;padding:2px 9px;border-radius:99px}
 .blko-qb button{width:100%;padding:12px;border:0;border-radius:99px;background:#17151d;color:#fff;font:inherit;cursor:pointer}
 </style>
-<div class="blko-qb" id="blko-qb-{{ section.id }}" style="--c:{{ section.settings.color }}">
-{%- if section.settings.heading != blank -%}<h2>{{ section.settings.heading }}</h2>{%- endif -%}
-{%- for n in (1..3) -%}
-{%- assign k = 'off' | append: n -%}{%- assign t = 'tag' | append: n -%}
-{%- assign off = section.settings[k] | default: 0 -%}
-{%- assign full = v.price | times: n -%}
-{%- assign now = 100 | minus: off | times: full | divided_by: 100 -%}
-<label class="r">{%- if section.settings[t] != blank -%}<span class="t">{{ section.settings[t] }}</span>{%- endif -%}
-<input type="radio" name="q{{ section.id }}" value="{{ n }}"{% if n == 2 %} checked{% endif %}>
-<span class="g"><strong>{{ section.settings.buy }} {{ n }}</strong>{%- if off > 0 -%}<small>{{ section.settings.save }} {{ off }}%</small>{%- endif -%}</span>
-{%- if off > 0 -%}<s>{{ full | money }}</s>{%- endif -%}<strong>{{ now | money }}</strong></label>
-{%- endfor -%}
-<button type="button">{{ section.settings.button }}</button>
-</div>
-<script>(()=>{var s=document.getElementById('blko-qb-{{ section.id }}'),b=s.querySelector('button'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',t=b.textContent;
-b.onclick=()=>{var f=document.querySelector('form[action*="/cart/add"] [name=id]');b.disabled=true;
-fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:f&&f.value||{{ v.id }},quantity:+s.querySelector('input:checked').value})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description||t})}})();</script>
+<div class="blko-qb" id="blko-qb-{{ section.id }}" style="--c:{{ st.color }}"><h2></h2><div></div><button type="button">{{ st.button }}</button></div>
+<script>(()=>{
+const s=document.getElementById('blko-qb-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},
+M={{ shop.money_format | json }},V0={{ product.selected_or_first_available_variant.id }},P0={{ product.selected_or_first_available_variant.price }},
+P={ {%- for v in product.variants -%}{{ v.id }}:{{ v.price }},{%- endfor -%} },
+b=s.querySelector('button'),L=s.querySelector('div'),T=b.textContent,
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+F=()=>document.querySelector('form[action*="/cart/add"] [name=id]'),
+e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n};
+let o,D,k=1;
+if({{ st.use_aov | json }})try{o={{ shop.metafields.avada_bundle.offer | json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='volume-discount'&&x.status==='active'&&(x.triggerProducts||[]).some(p=>String(p.id)==='{{ product.id }}'))}catch(x){}
+D=o&&o.discountInformation;
+if(D&&D.length)k=Math.max(0,D.findIndex(t=>t.isDefault));
+else{o=0;D=[{%- for n in (1..3) -%}{%- assign a = 'off' | append: n -%}{%- assign g = 'tag' | append: n -%}{%- assign d = st[a] | default: 0 -%}{quantity:{{ n }},discountType:'percentage',discountValue:{{ d }},isDefault:true,badgeText:{{ st[g] | json }},title:{{ st.buy | append: ' ' | append: n | json }},subTitle:{{ st.save | append: ' ' | append: d | append: '%' | json }}},{%- endfor -%}]}
+s.querySelector('h2').textContent=o?o.volumeTitle:{{ st.heading | json }};
+const p=P[(F()||{}).value]||P0;
+D.forEach((t,i)=>{const q=t.quantity,pc=t.discountType==='percentage',d=pc?t.discountValue:0,full=p*q,
+v=pc?t.discountValue+'%':m(t.discountValue*100),l=e('label',0,L),r=e('input',0,l),g=e('span',0,l);
+l.className='r';r.type='radio';r.name='q{{ section.id }}';r.checked=i==k;r.onchange=()=>k=i;g.className='g';
+e('strong',t.title.replace(/\{\{\s*product_quantity\s*\}\}/,q),g);
+if(d>0||o)e('small',t.subTitle.replace(/\{\{\s*discount_value\s*\}\}/,v),g);
+if(d>0)e('s',m(full),l);e('strong',m(full*(100-d)/100|0),l);
+if(t.isDefault&&t.badgeText)e('span',t.badgeText,l).className='t'});
+b.onclick=async()=>{b.disabled=true;try{const f=F(),t=D[k],it={id:f&&f.value||V0,quantity:t.quantity};
+if(o)it.properties={_aov_bundles:JSON.stringify({offerId:o.id})};
+const a=await fetch(R+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify(it)});if(!a.ok)throw await a.json();
+if(o&&t.discountValue>0&&o.code){const c=(await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
+await fetch(R+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
+location.href=R+'cart'}catch(x){b.disabled=false;b.textContent=x.description||T}}})();</script>
 {% schema %}
 {"name":"Blocko Quantity Breaks","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Quantity Breaks"}],
 "settings":[
+{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when this product has one","default":true},
 {"type":"text","id":"heading","label":"Heading","default":"Buy more, save more"},
 {"type":"text","id":"buy","label":"Row label","default":"Buy"},
 {"type":"text","id":"save","label":"Saving label","default":"Save"},
@@ -41,5 +55,5 @@ fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'}
 {"type":"text","id":"tag3","label":"Buy 3 tag","default":"Best value"},
 {"type":"text","id":"button","label":"Button text","default":"Add to cart"},
 {"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Savings are display only. Create a Shopify automatic discount with the same percentages so checkout charges the price shown."}]}
+{"type":"paragraph","content":"AOV mode: if this product has an active AOV.ai volume offer, tiers, text and code come from it. Settings mode: otherwise the tiers above are display only, so create a matching Shopify automatic discount for checkout."}]}
 {% endschema %}

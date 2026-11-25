@@ -1,6 +1,53 @@
 <i hidden data-blko-block="rewards-bar"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
-{%- if section.blocks.size > 0 -%}
+{%- liquid
+  assign s = section.settings
+  assign now = 'now' | date: '%s' | plus: 0
+  assign camp = nil
+  if s.use_aov
+    for c in shop.metafields.avada_free_gifts.giftCampaigns.value
+      if c.status == 'active' and c.triggerType == 'cart-value' and c.giftProducts.size > 0
+        assign e = c.endDate | date: '%s' | plus: 0
+        unless c.enabledEndDate and e < now
+          assign camp = c
+          break
+        endunless
+      endif
+    endfor
+  endif
+  assign aov = false
+  assign ga = 0
+  assign gv = nil
+  assign code = nil
+  assign pre = s.text
+  assign post = s.done
+  if camp
+    assign aov = true
+    assign tier = camp.discountInformation.first
+    assign g = camp.giftProducts.first
+    assign gp = all_products[g.handle]
+    assign gv = gp.selected_or_first_available_variant.id | default: g.variants.first.id
+    assign ga = tier.triggerValue | times: 100 | round
+    assign code = camp.code
+    assign did = camp.discountCodeAppId | split: '/' | last
+    assign tc = ''
+    case camp.type
+      when 'milestone-reward'
+        assign tc = '~tmr'
+      when 'gift-with-cart-value'
+        assign tc = '~tca'
+    endcase
+    assign prop = camp.id | append: tc | append: '~d' | append: did
+    assign rew = s.reward | replace: '{gift}', g.title
+    assign pre = tier.beforeAchievedMessage | default: s.text
+    assign post = camp.postAchieveMessage | default: s.done
+  elsif s.gift_product != blank and s.gift_at > 0
+    assign gv = s.gift_product.selected_or_first_available_variant.id
+    assign ga = s.gift_at | times: 100 | round
+    assign prop = '1'
+  endif
+-%}
+{%- if aov or section.blocks.size > 0 -%}
 <style>
 .blko-rb{max-width:1200px;margin-inline:auto;padding:10px 16px;font:inherit;text-align:center}
 .blko-rb .m{margin:0 0 10px;font-size:14px}
@@ -9,24 +56,34 @@
 .blko-rb .d{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#fff;border:2px solid rgba(0,0,0,.2);box-sizing:border-box}
 .blko-rb .d.on{background:var(--c);border-color:var(--c)}
 </style>
-<div class="blko-rb" id="blko-rb-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
+<div class="blko-rb" id="blko-rb-{{ section.id }}" style="--c:{{ s.color }}" hidden>
 <p class="m" aria-live="polite"></p>
 <div class="k"><div class="f"></div></div>
-{%- for b in section.blocks -%}<i hidden data-a="{{ b.settings.amount | times: 100 }}" data-l="{{ b.settings.label | escape }}" {{ b.shopify_attributes }}></i>{%- endfor -%}
+{%- if aov -%}<i hidden data-a="{{ ga }}" data-l="{{ rew | escape }}"></i>
+{%- else -%}{%- for b in section.blocks -%}<i hidden data-a="{{ b.settings.amount | times: 100 | round }}" data-l="{{ b.settings.label | escape }}" {{ b.shopify_attributes }}></i>{%- endfor -%}{%- endif -%}
 </div>
-<script>(()=>{var s=document.getElementById('blko-rb-{{ section.id }}'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',mf={{ shop.money_format | json }},cur={{ cart.currency.iso_code | json }},T={{ section.settings.text | json }},D={{ section.settings.done | json }},w;
+<script>(()=>{var s=document.getElementById('blko-rb-{{ section.id }}'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',mf={{ shop.money_format | json }},cur={{ cart.currency.iso_code | json }},B={{ pre | json }},D={{ post | json }},E={{ s.empty | json }},ID={{ camp.id | default: '1' | json }},K={{ aov | json }}?'_aovCampId':'_blko_gift',CODE={{ code | json }},GV={{ gv | json }},GA={{ ga }},PR={},w,busy=0;
+PR[K]={{ prop | json }};
 var ts=[].map.call(s.querySelectorAll('i[data-a]'),e=>({a:+e.dataset.a,l:e.dataset.l})).filter(t=>t.a>0).sort((x,y)=>x.a-y.a),mx=ts.length&&ts[ts.length-1].a;
 if(!ts.length)return;
-var k=s.querySelector('.k'),f=s.querySelector('.f'),m=s.querySelector('.m'),ds=ts.map(t=>{var d=document.createElement('span');d.className='d';d.style.left=t.a/mx*100+'%';d.title=t.l;k.appendChild(d);return d});
+var k=s.querySelector('.k'),f=s.querySelector('.f'),m=s.querySelector('.m'),ds=ts.map(t=>{var d=document.createElement('span');d.className='d';d.style.left=t.a/mx*100+'%';d.title=t.l;k.appendChild(d);return d}),
+J={'Content-Type':'application/json'},P=(u,b)=>fetch(r+u,{method:'POST',headers:J,body:JSON.stringify(b)}),
+mine=i=>i.properties&&String(i.properties[K]||'').split('~')[0]==ID;
 function $(c){return window.Shopify&&Shopify.formatMoney?Shopify.formatMoney(c,mf):(c/100).toFixed(2)+' '+cur}
-function u(){fetch(r+'cart.js',{headers:{Accept:'application/json'}}).then(x=>x.json()).then(c=>{var p=c.total_price,n=null;
-ts.forEach((t,i)=>{var o=p>=t.a;ds[i].className='d'+(o?' on':'');if(!o&&!n)n=t});
+function F(t,a,l){return t.replace(/\{\{?amount(?:_left)?\}\}?/g,a).replace(/\{\{?(?:nearest_reward|label)\}\}?/g,l)}
+async function u(){if(busy)return q();busy=1;try{
+var c=await(await fetch(r+'cart.js',{headers:{Accept:'application/json'}})).json(),L=c.items.filter(mine),g=L[0],n=L.reduce((a,i)=>a+i.quantity,0),p=c.items.filter(i=>!mine(i)).reduce((a,i)=>a+i.final_line_price,0),ok=GA>0&&p>=GA,nx=null;
+if(ok&&!g&&GV){await P('cart/add.js',{items:[{id:GV,quantity:1,properties:PR}]});c=0}
+else if(g&&(!ok||n>1)){var h=ok&&(L.find(i=>!i.final_line_price)||g);for(var i of L)if(i!=h)await P('cart/change.js',{id:i.key,quantity:0});if(h&&h.quantity>1)await P('cart/change.js',{id:h.key,quantity:1});c=0}
+if(ok&&CODE){var cs=(c||await(await fetch(r+'cart.js')).json()).discount_codes.map(x=>x.code);if(!cs.includes(CODE)){await P('cart/update.js',{discount:cs.concat(CODE).join(',')});c=0}}
+if(c===0)document.dispatchEvent(new CustomEvent('cart:refresh',{bubbles:true}));
+ts.forEach((t,i)=>{var o=p>=t.a;ds[i].className='d'+(o?' on':'');if(!o&&!nx)nx=t});
 f.style.width=Math.min(p/mx,1)*100+'%';
-m.textContent=n?T.replace('{amount}',$(n.a-p)).replace('{label}',n.l):D;s.hidden=false}).catch(()=>{})}
-function q(){clearTimeout(w);w=setTimeout(u,150)}
+var z=nx||ts[ts.length-1];m.textContent=F(nx?B:D,nx?$(nx.a-p):'',z.l);s.hidden=!p&&!E}catch(e){}setTimeout(()=>busy=0,600)}
+function q(){clearTimeout(w);w=setTimeout(u,350)}
 u();document.addEventListener('visibilitychange',()=>{document.hidden||q()});
 ['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,q));
-if(window.PerformanceObserver)try{new PerformanceObserver(l=>{l.getEntries().some(e=>/\/cart\/(add|change|update)/.test(e.name))&&q()}).observe({type:'resource',buffered:false})}catch(e){}})();</script>
+if(window.PerformanceObserver)try{new PerformanceObserver(l=>{l.getEntries().some(e=>/\/cart\/(add|change|update|clear)/.test(e.name))&&q()}).observe({type:'resource',buffered:false})}catch(e){}})();</script>
 {%- endif -%}
 {% schema %}
 {"name":"Blocko Rewards Bar","enabled_on":{"groups":["header"]},"max_blocks":3,"presets":[{"name":"Blocko Rewards Bar","blocks":[{"type":"tier","settings":{"amount":50,"label":"Free shipping"}}]}],
@@ -34,8 +91,13 @@ if(window.PerformanceObserver)try{new PerformanceObserver(l=>{l.getEntries().som
 {"type":"number","id":"amount","label":"Spend amount (shop currency)","default":50},
 {"type":"text","id":"label","label":"Reward label","default":"Free shipping"}]}],
 "settings":[
+{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai cart-value or milestone campaign, the bar follows that campaign (progress, gift line, discount code); milestone blocks are ignored. Settings mode: milestone blocks below. Optional gift: pick a product and a spend amount; it is added at that amount and removed below it. Create a Shopify automatic discount that makes it free, the bar does not price it. Turn off AOV.ai's app embed so the gift is not added twice."},
+{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},
+{"type":"text","id":"reward","label":"AOV reward text","default":"a free {gift}"},
 {"type":"text","id":"text","label":"Progress text","default":"Spend {amount} more for {label}"},
 {"type":"text","id":"done","label":"All unlocked text","default":"You unlocked everything"},
+{"type":"checkbox","id":"empty","label":"Show when cart is empty","default":true},
 {"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Rewards are display only. Create the matching shipping rate or automatic discounts (same minimum spend) so checkout gives the reward."}]}
+{"type":"product","id":"gift_product","label":"Gift product (settings mode)"},
+{"type":"number","id":"gift_at","label":"Add gift at spend (shop currency)"}]}
 {% endschema %}

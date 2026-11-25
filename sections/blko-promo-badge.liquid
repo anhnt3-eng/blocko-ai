@@ -1,0 +1,93 @@
+<i hidden data-blko-block="promo-badge"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign s = section.settings
+  assign now = 'now' | date: '%s' | plus: 0
+  assign pid = product.id | append: ''
+  assign camp = nil
+  if s.use_aov
+    for c in shop.metafields.avada_free_gifts.giftCampaigns.value
+      if c.status == 'active'
+        assign ok = true
+        if c.enabledEndDate and c.endDate
+          assign e = c.endDate | date: '%s' | plus: 0
+          if e < now
+            assign ok = false
+          endif
+        endif
+        if ok
+          assign camp = c
+          break
+        endif
+      endif
+    endfor
+    if camp and camp.enabledExcludedProducts
+      for x in camp.excludedProducts
+        assign xid = x.id | default: x | append: ''
+        if xid == pid
+          assign camp = nil
+        endif
+      endfor
+    endif
+  endif
+  assign line = ''
+  assign bg = '#eeeeee'
+  assign fg = '#1c1c1c'
+  if camp and camp.discountInformation.size > 0
+    assign t = camp.discountInformation.first
+    assign b = shop.metafields.avada_free_gifts.dealBadgeDesignSetting.value
+    assign bg = b.newBgColor | default: bg
+    assign fg = b.primaryTextColor | default: fg
+    assign is_gift = false
+    for g in camp.giftProducts
+      assign gid = g.id | append: ''
+      if gid == pid
+        assign is_gift = true
+      endif
+    endfor
+    if t.discountType == 'percentage'
+      assign disc = t.discountValue | append: '%'
+    else
+      assign disc = t.discountValue | times: 100 | money
+    endif
+    if camp.giftProducts.size > 0
+      assign reward = camp.giftProducts.first.title
+    else
+      assign reward = t.rewardMessage | replace: '{{discount}}', disc
+    endif
+    if camp.triggerType == 'cart-value'
+      assign amount = t.triggerValue | times: 100 | money
+      if is_gift
+        assign tpl = s.gift_text
+      else
+        assign tpl = s.text
+      endif
+    else
+      assign amount = t.triggerQuantity
+      assign tpl = s.qty_text
+    endif
+    assign line = tpl | replace: '{amount}', amount | replace: '{reward}', reward
+  elsif s.badge != blank
+    assign show = true
+    if s.collection != blank
+      assign show = false
+      for pc in product.collections
+        if pc.id == s.collection.id
+          assign show = true
+        endif
+      endfor
+    endif
+    if show
+      assign line = s.badge
+    endif
+  endif
+-%}
+{%- if line != blank -%}
+<div class="blko-pb" id="blko-pb-{{ section.id }}">
+<style>.blko-pb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}.blko-pb span{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:8px 14px;border-radius:99px;border:1px solid rgba(0,0,0,.12);font-size:14px;background:{{ bg }};color:{{ fg }}}.blko-pb svg{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}</style>
+<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 110-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 100-5c-3 0-4 5-4 5z"/></svg>{{ line | escape }}</span>
+</div>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko Promo Badge","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Promo Badge"}],"settings":[{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai campaign the badge shows its offer; text and colors come from AOV.ai. Settings mode: shows the badge text below on every product, or only products in the chosen collection. The badge only advertises, create the matching Shopify discount so checkout honors it."},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},{"type":"text","id":"badge","label":"Badge text (settings mode)","default":"Free gift over $60"},{"type":"collection","id":"collection","label":"Only for this collection (blank = all)"},{"type":"text","id":"text","label":"AOV offer text","default":"Spend {amount}, get {reward}"},{"type":"text","id":"gift_text","label":"AOV text on the gift product","default":"Free gift with orders over {amount}"},{"type":"text","id":"qty_text","label":"AOV text for quantity offers","default":"Buy {amount} items, get {reward}"}]}
+{% endschema %}
