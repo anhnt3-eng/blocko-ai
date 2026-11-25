@@ -1,0 +1,35 @@
+<i hidden data-blko-block="aov-fixed-bundle"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-fb" id="blko-fb-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
+<style>.blko-fb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}.blko-fb[hidden]{display:none}.blko-fb .l{display:grid;gap:10px;max-width:560px}.blko-fb .r{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}.blko-fb img{width:64px;height:64px;object-fit:cover;border-radius:8px}.blko-fb .g{flex:1;min-width:0;display:grid;gap:2px}.blko-fb a{color:inherit;font-weight:600}.blko-fb .p{border-color:var(--c)}.blko-fb .p a{color:var(--c)}.blko-fb .sv{color:var(--c);font-weight:600}</style>
+<h2></h2><div class="l"></div></div>
+<script>(()=>{
+const s=document.getElementById('blko-fb-{{ section.id }}'),L=s.querySelector('.l'),H=s.querySelector('h2'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
+M={{ shop.money_format | json }},INC={{ section.settings.included | json }},SAV={{ section.settings.saving | json }},PR={{ section.settings.promo | json }},LK={{ section.settings.link | json }},
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n},
+G=h=>fetch(R+'products/'+h+'.js').then(r=>r.json()).catch(()=>0),
+img=(p,d)=>{if(!p.featured_image)return;const i=document.createElement('img');i.alt='';i.width=i.height=160;i.src=p.featured_image+(p.featured_image.indexOf('?')<0?'?':'&')+'width=160';d.appendChild(i)};
+let O=[],a,b;try{O={{ shop.metafields.avada_bundle.offer | json }};if(typeof O==='string')O=JSON.parse(O);
+O=(O||[]).filter(x=>x.type==='product-fixed-bundle'&&x.status==='active');
+a=O.find(x=>x.productHandle==='{{ product.handle }}');
+b=O.find(x=>(x.productIds||[]).some(i=>String(i)==='{{ product.id }}'))}catch(x){}
+if(a){const T=a.triggerProducts||[];Promise.all(T.map(t=>G(t.handle))).then(P=>{
+P=P.map((p,i)=>p&&{p:p,q:T[i].quantity||1,v:p.variants.find(v=>String(v.id)===String((T[i].selectedVariantIds||[])[0]))||p.variants[0]}).filter(Boolean);if(!P.length)return;
+H.textContent=INC;let sum=0;
+P.forEach(x=>{sum+=x.v.price*x.q;const d=e('div',0,L),t=document.createElement('div');d.className='r';img(x.p,d);t.className='g';d.appendChild(t);e('a',x.p.title,t).href=x.p.url;e('span',(x.q>1?x.q+' x ':'')+m(x.v.price),t)});
+const sv=sum-{{ product.price }};if(sv>0)e('p',SAV.replace('[amount]',m(sv)),L).className='sv';
+s.hidden=false})}
+else if(b){G(b.productHandle).then(p=>{if(!p)return;
+const v=b.discountType==='percentage'?b.discountValue+'%':m(b.discountValue*100),d=e('div',0,L),t=document.createElement('div');
+d.className='r p';img(p,d);t.className='g';d.appendChild(t);
+e('span',PR.replace('[off]',v).replace('[title]',p.title),t);e('a',LK,t).href=p.url;s.hidden=false})}
+})();</script>
+{% schema %}
+{"name":"Blocko AOV Fixed Bundle","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko AOV Fixed Bundle"}],"settings":[{"type":"paragraph","content":"Shows AOV.ai Fixed bundle info: contents on the bundle page, a promo card on component products. Turn off AOV.ai's widget to avoid a duplicate."},
+{"type":"text","id":"included","label":"Bundle page heading","default":"Included in this bundle"},
+{"type":"text","id":"saving","label":"Saving text","default":"You save [amount] vs buying separately"},
+{"type":"text","id":"promo","label":"Promo text","default":"Save [off] with [title]"},
+{"type":"text","id":"link","label":"Link text","default":"View bundle"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
+{% endschema %}

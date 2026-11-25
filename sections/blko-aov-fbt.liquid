@@ -1,0 +1,42 @@
+<i hidden data-blko-block="aov-fbt"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-fbt" id="blko-fbt-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
+<style>.blko-fbt{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}.blko-fbt>*{max-width:520px}.blko-fbt p{opacity:.7;margin:0 0 14px}.blko-fbt .r{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:#fff;color:#111;border:1px solid rgba(0,0,0,.12);border-radius:12px;cursor:pointer}.blko-fbt .r:has(input:checked){border-color:var(--c)}.blko-fbt input{accent-color:var(--c)}.blko-fbt img{width:48px;height:48px;object-fit:cover;border-radius:8px}.blko-fbt .g{flex:1}.blko-fbt .s{margin:14px 0}.blko-fbt s{opacity:.55;margin-left:8px}.blko-fbt button{width:100%;padding:12px;border:0;border-radius:99px;background:var(--c);color:#fff;font:inherit;cursor:pointer}</style>
+<h2></h2><p></p><div class="l"></div><div class="s"></div>
+<button type="button">{{ section.settings.button }}</button></div>
+<script>(()=>{
+const s=document.getElementById('blko-fbt-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},
+M={{ shop.money_format | json }},V0={{ product.selected_or_first_available_variant.id }},
+b=s.querySelector('button'),L=s.querySelector('.l'),S=s.querySelector('.s'),T=b.textContent,
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+F=()=>document.querySelector('form[action*="/cart/add"] [name=id]'),
+e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n};
+(async()=>{let o;try{o={{ shop.metafields.avada_bundle.offer | json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='fbt'&&x.status==='active'&&(x.triggerCondition==='all-products'||(x.triggerProducts||[]).some(p=>String(p.id)==='{{ product.id }}')))}catch(x){}
+if(!o)return;
+const H=(o.offerProducts||[]).map(p=>p.handle);
+const ps=(await Promise.all(H.map(h=>fetch(R+'products/'+h+'.js').then(r=>r.ok?r.json():null).catch(()=>null)))).filter(p=>p&&p.available);
+if(!ps.length)return;
+const d=o.enabledDiscount&&o.discountValue>0,pc=o.discountType==='percentage',
+vt=pc?o.discountValue+'%':m(o.discountValue*100);
+const I=[{id:V0,price:{{ product.selected_or_first_available_variant.price }},title:{{ product.title | json }},img:{{ product.featured_image | image_url: width: 96 | json }},t:1}];
+ps.forEach(p=>{const v=p.variants.find(v=>v.available)||p.variants[0];I.push({id:v.id,price:v.price,title:p.title,img:p.featured_image,t:0})});
+s.querySelector('h2').textContent=o.offerTitle||'';
+s.querySelector('p').textContent=(o.offerDescription||'').replace(/\{\{\s*value_discount\s*\}\}/,vt);
+const C=I.map(i=>{const l=e('label',0,L),k=e('input',0,l);l.className='r';k.type='checkbox';k.checked=o.autoSelectOfferedItems!==false;if(i.t){k.checked=true;k.disabled=true}k.onchange=sum;
+if(i.img)e('img',0,l).src=i.img;e('span',i.title,l).className='g';e('strong',m(i.price),l);return k});
+function sum(){const a=I.filter((x,n)=>C[n].checked),w=a.reduce((n,i)=>n+i.price,0);let t=w;
+if(d&&a.length>1)t=pc?w*(100-o.discountValue)/100:Math.max(0,w-o.discountValue*100);
+S.textContent='Total ';e('strong',m(t),S);if(t<w)e('s','Was '+m(w),S)}
+sum();s.hidden=false;
+b.onclick=async()=>{b.disabled=true;try{const a=I.filter((x,n)=>C[n].checked),f=F(),g=Array.from({length:3},()=>String.fromCharCode(65+Math.random()*26|0)).join(''),
+items=a.map(i=>{const p={offerId:o.id,groupKey:g,minQty:a.length};if(i.t)p.isTrigger=true;return{id:i.t&&f&&f.value?+f.value:i.id,quantity:1,properties:{_aov_bundles:JSON.stringify(p)}}});
+const r=await fetch(R+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify({items})});if(!r.ok)throw await r.json();
+if(o.code&&a.length>1){const c=(await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
+await fetch(R+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
+location.href=R+'cart'}catch(x){b.disabled=false;b.textContent=x.description||T}}})()})();</script>
+{% schema %}
+{"name":"Blocko AOV FBT","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko AOV FBT"}],"settings":[{"type":"paragraph","content":"Shows this product's AOV.ai Bundle Frequently bought together offer. Products, title, discount and code come from AOV.ai. Turn off AOV.ai's FBT app embed widget to avoid a duplicate."},
+{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
+{% endschema %}

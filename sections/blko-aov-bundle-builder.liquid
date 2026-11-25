@@ -1,0 +1,47 @@
+<i hidden data-blko-block="aov-bundle-builder"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-bd" id="blko-bd-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
+<style>.blko-bd{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}.blko-bd .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin:16px 0}.blko-bd .c{display:flex;flex-direction:column;gap:6px;padding:10px;background:#fff;color:#111;border:1px solid rgba(0,0,0,.12);border-radius:12px}.blko-bd .c.on{border-color:var(--c)}.blko-bd img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}.blko-bd .q{display:flex;align-items:center;justify-content:space-between}.blko-bd .q button{width:32px;height:32px;border:1px solid rgba(0,0,0,.12);border-radius:50%;background:#fff;color:#111;font:inherit;cursor:pointer}.blko-bd .p{margin:0 0 12px}.blko-bd .a{width:100%;max-width:520px;padding:12px;border:0;border-radius:99px;background:var(--c);color:#fff;font:inherit;cursor:pointer}.blko-bd .a:disabled{opacity:.5;cursor:default}</style>
+<h2></h2><div class="g"></div><p class="p"></p>
+<button type="button" class="a"></button></div>
+<script>(()=>{
+const s=document.getElementById('blko-bd-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',J={'Content-Type':'application/json'},
+M={{ shop.money_format | json }},T={{ section.settings.button | json }},
+$=x=>s.querySelector(x),b=$('.a'),G=$('.g'),P=$('.p'),
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(n);return n};
+let o;try{o={{ shop.metafields.avada_bundle.offer | json }};if(typeof o==='string')o=JSON.parse(o);
+o=(o||[]).find(x=>x.type==='bundle-builder'&&(!x.status||x.status==='active')&&x.bundleBuilderProductHandle==={{ product.handle | json }})}catch(x){}
+if(!o||!(o.discountOptions||[]).length)return;
+const O=o.discountOptions.slice().sort((a,c)=>a.quantity-c.quantity),pc=o.discountType!=='fixed',
+lb=t=>pc?t.discountValue+'%':m(t.discountValue*100),L=[];
+const calc=()=>{let n=0,t=0;L.forEach(i=>{n+=i.q;t+=i.q*i.p});
+const cu=O.filter(x=>x.quantity<=n).pop(),nx=O.find(x=>x.quantity>n);
+let d=0;if(cu)d=pc?t*cu.discountValue/100:Math.min(t,cu.discountValue*100);
+return{n,t,cu,nx,f:t-d}};
+const draw=()=>{const r=calc();
+P.textContent=r.nx?'Add '+(r.nx.quantity-r.n)+' more to save '+lb(r.nx):'You save '+lb(r.cu);
+b.disabled=r.n<O[0].quantity;b.textContent=T+' · '+m(r.f)};
+Promise.all((o.offerProducts||[]).map(p=>fetch(R+'products/'+p.handle+'.js').then(r=>r.json()).catch(()=>0))).then(a=>{
+a.forEach(p=>{const v=p&&p.variants.find(v=>v.available);if(!v)return;
+const i={id:v.id,p:v.price,q:0},c=e('div',0,G),q=e('div',0,c),n=e('strong',0,q),
+dn=e('button','−',q),up=e('button','+',q);c.className='c';q.className='q';
+if(p.featured_image){const im=document.createElement('img');im.src=p.featured_image;im.alt='';im.loading='lazy';c.insertBefore(im,q)}
+c.insertBefore(document.createElement('span'),q).textContent=p.title;
+c.insertBefore(document.createElement('small'),q).textContent=m(v.price);
+dn.type=up.type='button';n.textContent=0;
+const u=d=>{i.q=Math.max(0,i.q+d);n.textContent=i.q;c.classList.toggle('on',i.q>0);draw()};
+dn.onclick=()=>u(-1);up.onclick=()=>u(1);L.push(i)});
+if(!L.length)return;
+$('h2').textContent=o.offerTitle||'Build your bundle';draw();s.hidden=false});
+b.onclick=async()=>{b.disabled=true;try{const z=Math.random().toString(36).slice(2,7),
+items=L.filter(i=>i.q).map(i=>({id:i.id,quantity:i.q,properties:{_aov_offerId:o.id,_aov_offerType:'bundle-builder',_aov_bundleGroup:o.id+'|'+z+'|'}})),
+a=await fetch(R+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify({items})});if(!a.ok)throw await a.json();
+if(o.code){const c=(await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
+await fetch(R+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
+location.href=R+'cart'}catch(x){b.disabled=false;P.textContent=x.description||x.message||'Could not add'}}})();</script>
+{% schema %}
+{"name":"Blocko AOV Bundle Builder","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko AOV Bundle Builder"}],"settings":[{"type":"paragraph","content":"Shows the AOV.ai Bundle builder on its bundle product page. Turn off AOV.ai's widget to avoid a duplicate."},
+{"type":"text","id":"button","label":"Button text","default":"Add bundle"},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
+{% endschema %}
