@@ -1,0 +1,90 @@
+<i hidden data-blko-block="subscribe-save"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
+{%- assign st = section.settings -%}
+{%- assign qlist = st.qtys | default: '1' | split: ',' -%}
+<style>
+.blko-ss{display:block;max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;color:#17151d}
+.blko-ss>*{max-width:520px}
+.blko-ss .q{display:flex;gap:6px;margin-bottom:14px}.blko-ss .q button{min-width:44px;padding:8px 14px;border:1px solid rgba(0,0,0,.2);border-radius:99px;background:#fff;color:inherit;font:inherit;cursor:pointer}
+.blko-ss .q .on{background:var(--c);border-color:var(--c);color:#fff}
+.blko-ss .r{position:relative;display:block;padding:16px;margin-bottom:12px;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:14px;cursor:pointer}
+.blko-ss .r:has(input:checked){border:2px solid var(--c);padding:15px}
+.blko-ss .h{display:flex;align-items:center;gap:10px}.blko-ss .h strong{flex:1}
+.blko-ss input[type=radio]{accent-color:var(--c);margin:0}
+.blko-ss .t{background:var(--c);color:#fff;font-size:12px;padding:3px 10px;border-radius:99px}
+.blko-ss .p{display:flex;align-items:baseline;gap:8px;margin:8px 0 0 28px}.blko-ss .p strong{font-size:1.3em}.blko-ss .p s{opacity:.55}
+.blko-ss small{display:block;margin:2px 0 0 28px;opacity:.7}
+.blko-ss ul{list-style:none;margin:10px 0 0 28px;padding:0}.blko-ss li{display:flex;align-items:center;gap:8px;margin-top:4px}
+.blko-ss .r select{width:calc(100% - 28px);margin:10px 0 0 28px}.blko-ss li svg{flex:none;width:16px;height:16px;color:var(--c)}
+.blko-ss select{width:100%;padding:10px;margin-bottom:12px;border:1px solid rgba(0,0,0,.2);border-radius:10px;background:#fff;color:inherit;font:inherit}
+.blko-ss .go{width:100%;padding:16px;border:0;border-radius:99px;background:var(--c);color:#fff;font:inherit;font-weight:700;font-size:1.1em;cursor:pointer}
+.blko-ss .n{text-align:center;margin:8px 0 0;font-size:.85em;opacity:.7}
+</style>
+{%- if product.selling_plan_groups.size == 0 and request.design_mode -%}<p class="blko-ss">{{ st.no_plan_hint }}</p>{%- endif -%}
+<div class="blko-ss" id="blko-ss-{{ section.id }}" style="--c:{{ st.color }}" hidden></div>
+<script>(()=>{
+const s=document.getElementById('blko-ss-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',M={{ shop.money_format | json }},
+D={ {%- for v in product.variants -%}{{ v.id }}:{t:{{ v.title | json }},p:{{ v.price }},a:[{%- for al in v.selling_plan_allocations -%}[{{ al.selling_plan.id }},{{ al.price }},{{ al.per_delivery_price | default: al.price }},{{ al.selling_plan.name | json }},{{ al.selling_plan.options | map: 'value' | join: ' ' | json }}],{%- endfor -%}]},{%- endfor -%} },
+Q={{ qlist | json }}.map(x=>parseInt(x,10)).filter(x=>x>0),U=parseFloat({{ st.units | json }})||0,REQ={{ product.requires_selling_plan | json }},
+B=[{{ st.b1 | json }},{{ st.b2 | json }},{{ st.b3 | json }},{{ st.b4 | json }}].filter(Boolean),
+T={sub:{{ st.sub_title | json }},one:{{ st.one_title | json }},off:{{ st.off_text | json }},plan:{{ st.plan_text | json }},day:{{ st.day_text | json }},btn:{{ st.button | json }},note:{{ st.note | json }}},
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+F=()=>document.querySelector('form[action*="/cart/add"] [name=id]'),
+e=(g,x,p,c)=>{const n=document.createElement(g);if(x)n.textContent=x;if(c)n.className=c;p&&p.appendChild(n);return n},
+V=Object.keys(D);
+let S={v:(F()&&D[F().value]?F().value:{{ product.selected_or_first_available_variant.id }})+'',q:Q[0]||1,m:'s',i:0};
+if(!Q.length)Q.push(1);
+const iv=a=>{const x=/(\d+)?\s*(day|week|month)/i.exec(a[3]+' '+a[4]);if(!x)return 0;const n=+x[1]||1,u=x[2].toLowerCase();
+return{d:n*(u=='day'?1:u=='week'?7:30),l:n+' '+u+(n>1?'s':'')}},
+fill=(t,o)=>t.replace(/\{(\w+)\}/g,(z,k)=>o[k]==null?z:o[k]),
+day=c=>U&&T.day?fill(T.day,{price:m(c/U)}):'';
+function R_(){const v=D[S.v],A=v.a,sub=A.length>0;s.textContent='';s.hidden=!sub&&REQ;if(s.hidden)return;
+if(!sub)S.m='o';if(REQ)S.m='s';
+if(Q.length>1){const q=e('div',0,s,'q');Q.forEach(n=>{const b=e('button',n,q,n==S.q?'on':'');b.type='button';b.onclick=()=>{S.q=n;R_()}})}
+if(V.length>1){const l=e('select',0,s);V.forEach(k=>{const o=e('option',D[k].t,l);o.value=k;o.selected=k==S.v});
+l.onchange=()=>{S.v=l.value;S.i=0;const f=F();if(f&&f.value!=S.v){f.value=S.v;f.dispatchEvent(new Event('change',{bubbles:true}))}R_()}}
+const a=A[S.i]||A[0],I=a&&iv(a),card=(k,ttl)=>{const l=e('label',0,s,'r'),h=e('div',0,l,'h'),r=e('input',0,h);r.type='radio';r.name='blko-ss-{{ section.id }}';r.checked=S.m==k;r.onchange=()=>{S.m=k;R_()};e('strong',ttl,h);return[l,h]};
+if(sub){const c=card('s',T.sub),pc=Math.round((1-a[1]/v.p)*100),p=e('div',0,c[0],'p');
+if(pc>0&&T.off)e('span',pc+'% '+T.off,c[1],'t');e('strong',m(a[1]*S.q),p);if(pc>0)e('s',m(v.p*S.q),p);
+const d=day(a[1]);if(d)e('span',d,p);
+if(T.plan)e('small',fill(T.plan,{units:U||'',interval:I?I.l:a[3]}),c[0]);
+if(A.length>1){const l=e('select',0,c[0]);A.forEach((x,i)=>{const o=e('option',(w=>w[0].toUpperCase()+w.slice(1))(x[3].replace(/^Deliver\s+/i,'').split(',')[0]),l);o.value=i;o.selected=i==S.i});l.onchange=()=>{S.i=+l.value;R_()}}
+if(B.length){const u=e('ul',0,c[0]);B.forEach(b=>{const li=e('li',0,u);li.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';e('span',b,li)})}}
+if(!REQ||!sub){const c=card('o',T.one),p=e('div',0,c[0],'p');e('strong',m(v.p*S.q),p);const d=day(v.p);if(d)e('span',d,p)}
+const b=e('button',T.btn,s,'go');b.type='button';
+if(sub&&S.m=='s'&&T.note)e('p',fill(T.note,{price:m(a[2]*S.q),interval:I?I.l:a[3]}),s,'n');
+b.onclick=async()=>{b.disabled=true;try{const it={id:+S.v,quantity:S.q};if(sub&&S.m=='s')it.selling_plan=a[0];
+const dr=document.querySelector('cart-drawer'),x=dr&&dr.renderContents?{sections:'cart-drawer',sections_url:location.pathname}:{};
+const r=await fetch(R+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign(it,x))});
+if(!r.ok)throw await r.json();if(x.sections){dr.renderContents(await r.json());b.disabled=false}else location.href=R+'cart'}
+catch(z){b.disabled=false;b.textContent=z.description||T.btn}}}
+document.addEventListener('change',ev=>{const f=F();if(f&&ev.target==f&&D[f.value]&&f.value!=S.v){S.v=f.value;S.i=0;R_()}});
+R_()})();</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko Subscribe & Save","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Subscribe & Save"}],"settings":[{"type":"text","id":"sub_title","label":"Subscribe card title","default":"Subscribe & Save"},{"type":"text","id":"off_text","label":"Badge text after the discount","default":"OFF"},{"type":"text","id":"plan_text","label":"Plan text under the price","default":"{units} packs each {interval}","info":"{units} {interval}. Empty hides it."},{"type":"text","id":"b1","label":"Benefit 1","default":"Free shipping on every order"},{"type":"text","id":"b2","label":"Benefit 2","default":"Skip, pause or cancel anytime"},{"type":"text","id":"b3","label":"Benefit 3","default":"Save on every delivery"},{"type":"text","id":"b4","label":"Benefit 4"},{"type":"text","id":"one_title","label":"One-time card title","default":"One Time Purchase"},{"type":"text","id":"units","label":"Units per delivery","info":"e.g. 28. Empty hides the per-day price."},{"type":"text","id":"day_text","label":"Per-day text","default":"{price}/day"},{"type":"text","id":"qtys","label":"Quantity choices","default":"1","info":"e.g. 1,2. One value hides the toggle."},{"type":"text","id":"button","label":"Button text","default":"Start Now"},{"type":"text","id":"note","label":"Renewal note","default":"Renews at {price} each {interval}. Cancel anytime"},{"type":"text","id":"no_plan_hint","label":"Hint in the theme editor when the product has no subscription","default":"No selling plan: only One Time Purchase shows."},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"Prices come from the product's selling plans."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
+{% endschema %}
