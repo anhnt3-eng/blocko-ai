@@ -17,7 +17,7 @@
 @media(max-width:600px){#blko-sa-{{ section.id }}.blko-sa-nm{display:none}#blko-sa-{{ section.id }} img{display:none}#blko-sa-{{ section.id }} button{flex:1}}
 </style>
 <div class="w">
-{%- if product.featured_image -%}<img src="{{ product.featured_image | image_url: width: 120 }}" alt="" loading="lazy">{%- endif -%}
+{%- if product.featured_image -%}<img src="{{ product.featured_image | image_url: width: 120 }}" alt="" width="48" height="48" loading="lazy">{%- endif -%}
 <div class="t"><div class="n">{{ product.title }}</div><div class="p">{{ v0.price | money }}</div></div>
 {%- if product.variants.size > 1 -%}
 <select aria-label="Variant">{%- for v in product.variants -%}<option value="{{ v.id }}"{% if v.id == v0.id %} selected{% endif %}>{{ v.title }}</option>{%- endfor -%}</select>
