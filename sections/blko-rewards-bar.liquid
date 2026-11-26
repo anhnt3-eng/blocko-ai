@@ -3,15 +3,28 @@
 {%- liquid
   assign s = section.settings
   assign now = 'now' | date: '%s' | plus: 0
+  assign types = 'milestone-reward,gift-with-cart-value,buy-x-get-y,gift-with-quantity-purchase,gift-with-collection-value,shipping-goal,order-goal'
   assign camp = nil
   if s.use_aov
     for c in shop.metafields.avada_free_gifts.giftCampaigns.value
-      if c.status == 'active' and c.triggerType == 'cart-value' and c.giftProducts.size > 0
-        assign e = c.endDate | date: '%s' | plus: 0
-        unless c.enabledEndDate and e < now
-          assign camp = c
-          break
-        endunless
+      assign e = c.endDate | date: '%s' | plus: 0
+      assign st = c.startDate | date: '%s' | plus: 0
+      assign okc = false
+      if c.status == 'active' and types contains c.type and st <= now
+        assign okc = true
+      endif
+      if c.enabledEndDate and e < now
+        assign okc = false
+      endif
+      if c.giftProducts.size == 0 and c.type != 'shipping-goal' and c.type != 'order-goal'
+        assign okc = false
+      endif
+      if c.triggerType != 'cart-value' and 'milestone-reward,gift-with-cart-value' contains c.type
+        assign okc = false
+      endif
+      if okc
+        assign camp = c
+        break
       endif
     endfor
   endif
@@ -19,27 +32,51 @@
   assign ga = 0
   assign gv = nil
   assign code = nil
+  assign qty = false
   assign pre = s.text
   assign post = s.done
   if camp
     assign aov = true
     assign tier = camp.discountInformation.first
     assign g = camp.giftProducts.first
-    assign gp = all_products[g.handle]
-    assign gv = gp.selected_or_first_available_variant.id | default: g.variants.first.id
-    assign ga = tier.triggerValue | times: 100 | round
     assign code = camp.code
     assign did = camp.discountCodeAppId | split: '/' | last
     assign tc = ''
+    assign rew = s.ship
     case camp.type
       when 'milestone-reward'
         assign tc = '~tmr'
       when 'gift-with-cart-value'
         assign tc = '~tca'
+      when 'gift-with-collection-value'
+        assign tc = '~tco'
+      when 'gift-with-quantity-purchase'
+        assign tc = '~tqu'
+        assign qty = true
+      when 'buy-x-get-y'
+        assign tc = '~txy'
+        assign qty = true
+      when 'order-goal'
+        assign rew = s.off
+        assign qty = camp.enabledTriggerQuantity
     endcase
+    if qty
+      assign ga = camp.triggerQuantity | plus: 0
+      assign pre = s.text_qty
+    elsif tier
+      assign ga = tier.triggerValue | times: 100 | round
+      assign pre = tier.beforeAchievedMessage | default: s.text
+    else
+      assign ga = camp.minimumTriggerValue | times: 100 | round
+    endif
+    if g
+      assign gp = all_products[g.handle]
+      assign gv = gp.selected_or_first_available_variant.id | default: g.variants.first.id
+      assign rew = s.reward | replace: '{gift}', g.title
+    endif
+    assign tp = camp.triggerProducts | map: 'id'
+    assign tcl = camp.triggerCollections | map: 'handle'
     assign prop = camp.id | append: tc | append: '~d' | append: did
-    assign rew = s.reward | replace: '{gift}', g.title
-    assign pre = tier.beforeAchievedMessage | default: s.text
     assign post = camp.postAchieveMessage | default: s.done
   elsif s.gift_product != blank and s.gift_at > 0
     assign gv = s.gift_product.selected_or_first_available_variant.id
@@ -62,7 +99,7 @@
 {%- if aov -%}<i hidden data-a="{{ ga }}" data-l="{{ rew | escape }}"></i>
 {%- else -%}{%- for b in section.blocks -%}<i hidden data-a="{{ b.settings.amount | times: 100 | round }}" data-l="{{ b.settings.label | escape }}" {{ b.shopify_attributes }}></i>{%- endfor -%}{%- endif -%}
 </div>
-<script>(()=>{var s=document.getElementById('blko-rb-{{ section.id }}'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',mf={{ shop.money_format | json }},cur={{ cart.currency.iso_code | json }},B={{ pre | json }},D={{ post | json }},E={{ s.empty | json }},ID={{ camp.id | default: '1' | json }},K={{ aov | json }}?'_aovCampId':'_blko_gift',CODE={{ code | json }},GV={{ gv | json }},GA={{ ga }},PR={},w,busy=0;
+<script>(()=>{var s=document.getElementById('blko-rb-{{ section.id }}'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',mf={{ shop.money_format | json }},cur={{ cart.currency.iso_code | json }},B={{ pre | json }},Q={{ qty | json }},IH=({{ tp | json }}||[]).map(Number),CH={{ tcl | json }}||[],S=new Set(IH),D={{ post | json }},E={{ s.empty | json }},ID={{ camp.id | default: '1' | json }},K={{ aov | json }}?'_aovCampId':'_blko_gift',CODE={{ code | json }},GV={{ gv | json }},GA={{ ga }},PR={},w,busy=0;
 PR[K]={{ prop | json }};
 var ts=[].map.call(s.querySelectorAll('i[data-a]'),e=>({a:+e.dataset.a,l:e.dataset.l})).filter(t=>t.a>0).sort((x,y)=>x.a-y.a),mx=ts.length&&ts[ts.length-1].a;
 if(!ts.length)return;
@@ -72,14 +109,15 @@ mine=i=>i.properties&&String(i.properties[K]||'').split('~')[0]==ID;
 function $(c){return window.Shopify&&Shopify.formatMoney?Shopify.formatMoney(c,mf):(c/100).toFixed(2)+' '+cur}
 function F(t,a,l){return t.replace(/\{\{?amount(?:_left)?\}\}?/g,a).replace(/\{\{?(?:nearest_reward|label)\}\}?/g,l)}
 async function u(){if(busy)return q();busy=1;try{
-var c=await(await fetch(r+'cart.js',{headers:{Accept:'application/json'}})).json(),L=c.items.filter(mine),g=L[0],n=L.reduce((a,i)=>a+i.quantity,0),p=c.items.filter(i=>!mine(i)).reduce((a,i)=>a+i.final_line_price,0),ok=GA>0&&p>=GA,nx=null;
+if(CH.length&&!S.size)for(var h of CH)try{(await(await fetch(r+'collections/'+h+'/products.json?limit=250')).json()).products.forEach(x=>S.add(x.id))}catch(e){}
+var c=await(await fetch(r+'cart.js',{headers:{Accept:'application/json'}})).json(),L=c.items.filter(mine),g=L[0],n=L.reduce((a,i)=>a+i.quantity,0),p=c.items.filter(i=>!mine(i)&&(!(IH.length+CH.length)||S.has(i.product_id))).reduce((a,i)=>a+(Q?i.quantity:i.original_line_price),0),ok=GA>0&&p>=GA,nx=null;
 if(ok&&!g&&GV){await P('cart/add.js',{items:[{id:GV,quantity:1,properties:PR}]});c=0}
 else if(g&&(!ok||n>1)){var h=ok&&(L.find(i=>!i.final_line_price)||g);for(var i of L)if(i!=h)await P('cart/change.js',{id:i.key,quantity:0});if(h&&h.quantity>1)await P('cart/change.js',{id:h.key,quantity:1});c=0}
-if(ok&&CODE){var cs=(c||await(await fetch(r+'cart.js')).json()).discount_codes.map(x=>x.code);if(!cs.includes(CODE)){await P('cart/update.js',{discount:cs.concat(CODE).join(',')});c=0}}
+if(CODE){var cs=(c||await(await fetch(r+'cart.js')).json()).discount_codes.map(x=>x.code);if(ok!=cs.includes(CODE)){await P('cart/update.js',{discount:(ok?cs.concat(CODE):cs.filter(x=>x!=CODE)).join(',')});c=0}}
 if(c===0)document.dispatchEvent(new CustomEvent('cart:refresh',{bubbles:true}));
 ts.forEach((t,i)=>{var o=p>=t.a;ds[i].className='d'+(o?' on':'');if(!o&&!nx)nx=t});
 f.style.width=Math.min(p/mx,1)*100+'%';
-var z=nx||ts[ts.length-1];m.textContent=F(nx?B:D,nx?$(nx.a-p):'',z.l);s.hidden=!p&&!E}catch(e){}setTimeout(()=>busy=0,600)}
+var z=nx||ts[ts.length-1];m.textContent=F(nx?B:D,nx?Q?nx.a-p:$(nx.a-p):'',z.l);s.hidden=!p&&!E}catch(e){}setTimeout(()=>busy=0,600)}
 function q(){clearTimeout(w);w=setTimeout(u,350)}
 u();document.addEventListener('visibilitychange',()=>{document.hidden||q()});
 ['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,q));
@@ -91,10 +129,13 @@ if(window.PerformanceObserver)try{new PerformanceObserver(l=>{l.getEntries().som
 {"type":"number","id":"amount","label":"Spend amount (shop currency)","default":50},
 {"type":"text","id":"label","label":"Reward label","default":"Free shipping"}]}],
 "settings":[
-{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai cart-value or milestone campaign, the bar follows that campaign (progress, gift line, discount code); milestone blocks are ignored. Settings mode: milestone blocks below. Optional gift: pick a product and a spend amount; it is added at that amount and removed below it. Create a Shopify automatic discount that makes it free, the bar does not price it. Turn off AOV.ai's app embed so the gift is not added twice."},
+{"type":"paragraph","content":"AOV mode: follows the first active AOV.ai campaign (milestone, cart value, buy X get Y, quantity, collection, shipping goal, order goal): progress, gift line, discount code; blocks are ignored. Settings mode: blocks below, plus an optional gift added at a spend amount (create a Shopify discount that makes it free). Turn off AOV.ai's app embed."},
 {"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},
 {"type":"text","id":"reward","label":"AOV reward text","default":"a free {gift}"},
 {"type":"text","id":"text","label":"Progress text","default":"Spend {amount} more for {label}"},
+{"type":"text","id":"text_qty","label":"Progress text (items)","default":"Add {amount} more item(s) for {label}"},
+{"type":"text","id":"ship","label":"AOV shipping text","default":"free shipping"},
+{"type":"text","id":"off","label":"AOV discount text","default":"a discount"},
 {"type":"text","id":"done","label":"All unlocked text","default":"You unlocked everything"},
 {"type":"checkbox","id":"empty","label":"Show when cart is empty","default":true},
 {"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
