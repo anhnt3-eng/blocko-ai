@@ -1,5 +1,29 @@
 <i hidden data-blko-block="waitlist"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {%- assign v0 = product.selected_or_first_available_variant -%}
 <div class="blko-wl" id="blko-wl-{{ section.id }}" hidden>
 <style>
@@ -30,12 +54,7 @@ if(s!==seq||!d||!(d.count>0))return;n.textContent=T.replace('{n}',d.count);n.hid
 sync();setInterval(sync,400);document.addEventListener('change',sync);
 })();
 </script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Waitlist","settings":[
-{"type":"text","id":"heading","label":"Heading","default":"Currently sold out"},
-{"type":"text","id":"count_text","label":"Count text ({n} = number)","default":"{n} people are waiting"},
-{"type":"text","id":"date_label","label":"Restock date label","default":"Expected back:"},
-{"type":"text","id":"date","label":"Restock date (leave empty to hide)"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}],
-"presets":[{"name":"Blocko Waitlist"}],"enabled_on":{"templates":["product"]}}
+{"name":"Blocko Waitlist","settings":[{"type":"text","id":"heading","label":"Heading","default":"Currently sold out"},{"type":"text","id":"count_text","label":"Count text ({n} = number)","default":"{n} people are waiting"},{"type":"text","id":"date_label","label":"Restock date label","default":"Expected back:"},{"type":"text","id":"date","label":"Restock date (leave empty to hide)"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"presets":[{"name":"Blocko Waitlist"}],"enabled_on":{"templates":["product"]}}
 {% endschema %}

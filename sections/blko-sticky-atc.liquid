@@ -1,5 +1,29 @@
 <i hidden data-blko-block="sticky-atc"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {%- assign v0 = product.selected_or_first_available_variant -%}
 <div class="blko-sa{% unless section.settings.show_on_mobile %} blko-sa-nm{% endunless %}" id="blko-sa-{{ section.id }}" hidden>
 <style>
@@ -60,11 +84,7 @@ if(t&&d){t.click()}else if(d&&d.open){d.open()}else{location.href=R+'cart'}})
 .then(function(){setTimeout(function(){show(cur)},800)})});
 })();
 </script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Sticky ATC","settings":[
-{"type":"checkbox","id":"show_on_mobile","label":"Show on mobile","default":true},
-{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
-{"type":"text","id":"soldout","label":"Sold out text","default":"Sold out"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}],
-"presets":[{"name":"Blocko Sticky ATC"}],"enabled_on":{"templates":["product"]}}
+{"name":"Blocko Sticky ATC","settings":[{"type":"checkbox","id":"show_on_mobile","label":"Show on mobile","default":true},{"type":"text","id":"button","label":"Button text","default":"Add to cart"},{"type":"text","id":"soldout","label":"Sold out text","default":"Sold out"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"presets":[{"name":"Blocko Sticky ATC"}],"enabled_on":{"templates":["product"]}}
 {% endschema %}

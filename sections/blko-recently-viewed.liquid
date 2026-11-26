@@ -1,5 +1,29 @@
 <i hidden data-blko-block="recently-viewed"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 <div class="blko-rv" id="blko-rv-{{ section.id }}" hidden>
 <style>
 #blko-rv-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;--c:{{ section.settings.color }}}
@@ -35,10 +59,7 @@ i.appendChild(n);i.appendChild(pr);a.appendChild(i);g.appendChild(a)});
 r.hidden=false})
 })();
 </script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Recently Viewed","settings":[
-{"type":"text","id":"heading","label":"Heading","default":"Recently viewed"},
-{"type":"range","id":"count","label":"Products to show","min":2,"max":8,"step":1,"default":4},
-{"type":"color","id":"color","label":"Price color","default":"#6538bd"}],
-"presets":[{"name":"Blocko Recently Viewed"}],"enabled_on":{"templates":["product","collection","index"]}}
+{"name":"Blocko Recently Viewed","settings":[{"type":"text","id":"heading","label":"Heading","default":"Recently viewed"},{"type":"range","id":"count","label":"Products to show","min":2,"max":8,"step":1,"default":4},{"type":"color","id":"color","label":"Price color","default":"#6538bd"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"presets":[{"name":"Blocko Recently Viewed"}],"enabled_on":{"templates":["product","collection","index"]}}
 {% endschema %}

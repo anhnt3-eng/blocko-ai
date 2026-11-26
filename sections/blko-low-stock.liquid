@@ -1,5 +1,29 @@
 <i hidden data-blko-block="low-stock"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {%- assign v0 = product.selected_or_first_available_variant -%}
 {%- assign th = section.settings.threshold | default: 5 -%}
 <div class="blko-ls" id="blko-ls-{{ section.id }}" hidden>
@@ -25,11 +49,7 @@ t.textContent=TXT.split('NUM').join(String(n));f.style.width=Math.round(n/TH*100
 sync();setInterval(sync,400);document.addEventListener('change',sync);
 })();
 </script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Low Stock","settings":[
-{"type":"paragraph","content":"Uses real Shopify inventory. Shows only for variants with Shopify inventory tracking on and Continue selling when out of stock turned off."},
-{"type":"range","id":"threshold","label":"Show when stock is at or below","min":1,"max":50,"step":1,"default":5},
-{"type":"text","id":"text","label":"Text (NUM = quantity left)","default":"Only NUM left in stock"},
-{"type":"color","id":"color","label":"Bar color","default":"#d72c0d"}],
-"presets":[{"name":"Blocko Low Stock"}],"enabled_on":{"templates":["product"]}}
+{"name":"Blocko Low Stock","settings":[{"type":"paragraph","content":"Uses real Shopify inventory. Shows only for variants with Shopify inventory tracking on and Continue selling when out of stock turned off."},{"type":"range","id":"threshold","label":"Show when stock is at or below","min":1,"max":50,"step":1,"default":5},{"type":"text","id":"text","label":"Text (NUM = quantity left)","default":"Only NUM left in stock"},{"type":"color","id":"color","label":"Bar color","default":"#d72c0d"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"presets":[{"name":"Blocko Low Stock"}],"enabled_on":{"templates":["product"]}}
 {% endschema %}

@@ -1,5 +1,29 @@
 <i hidden data-blko-block="quantity-breaks"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {%- assign st = section.settings -%}
 <style>
 .blko-qb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}
@@ -40,20 +64,7 @@ const a=await fetch(R+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify
 if(o&&t.discountValue>0&&o.code){const c=(await(await fetch(R+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
 await fetch(R+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
 location.href=R+'cart'}catch(x){b.disabled=false;b.textContent=x.description||T}}})();</script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Quantity Breaks","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Quantity Breaks"}],
-"settings":[
-{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when this product has one","default":true},
-{"type":"text","id":"heading","label":"Heading","default":"Buy more, save more"},
-{"type":"text","id":"buy","label":"Row label","default":"Buy"},
-{"type":"text","id":"save","label":"Saving label","default":"Save"},
-{"type":"range","id":"off1","label":"Buy 1 saving %","min":0,"max":50,"default":0},
-{"type":"range","id":"off2","label":"Buy 2 saving %","min":0,"max":50,"default":15},
-{"type":"range","id":"off3","label":"Buy 3 saving %","min":0,"max":50,"default":25},
-{"type":"text","id":"tag1","label":"Buy 1 tag"},
-{"type":"text","id":"tag2","label":"Buy 2 tag","default":"Most popular"},
-{"type":"text","id":"tag3","label":"Buy 3 tag","default":"Best value"},
-{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"AOV mode: if this product has an active AOV.ai volume offer, tiers, text and code come from it. Settings mode: otherwise the tiers above are display only, so create a matching Shopify automatic discount for checkout."}]}
+{"name":"Blocko Quantity Breaks","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Quantity Breaks"}],"settings":[{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when this product has one","default":true},{"type":"text","id":"heading","label":"Heading","default":"Buy more, save more"},{"type":"text","id":"buy","label":"Row label","default":"Buy"},{"type":"text","id":"save","label":"Saving label","default":"Save"},{"type":"range","id":"off1","label":"Buy 1 saving %","min":0,"max":50,"default":0},{"type":"range","id":"off2","label":"Buy 2 saving %","min":0,"max":50,"default":15},{"type":"range","id":"off3","label":"Buy 3 saving %","min":0,"max":50,"default":25},{"type":"text","id":"tag1","label":"Buy 1 tag"},{"type":"text","id":"tag2","label":"Buy 2 tag","default":"Most popular"},{"type":"text","id":"tag3","label":"Buy 3 tag","default":"Best value"},{"type":"text","id":"button","label":"Button text","default":"Add to cart"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"AOV mode: if this product has an active AOV.ai volume offer, tiers, text and code come from it. Settings mode: otherwise the tiers above are display only, so create a matching Shopify automatic discount for checkout."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

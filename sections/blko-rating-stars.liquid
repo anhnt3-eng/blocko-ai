@@ -1,5 +1,29 @@
 <i hidden data-blko-block="rating-stars"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {%- if product -%}
 <div class="blko-rs" id="blko-rs-{{ section.id }}" hidden style="--c:{{ section.settings.color }}">
   <a class="blko-rs__link" href="#blko-reviews">
@@ -43,14 +67,7 @@
   .blko-rs__stars i::before { content: "★★★★★"; }
   .blko-rs__text { font-size: 14px; }
 </style>
+{%- endif -%}
 {% schema %}
-{
-  "name": "Blocko Rating Stars",
-  "settings": [
-    {"type": "color", "id": "color", "label": "Star color", "default": "#6538bd"},
-    {"type": "text", "id": "label", "label": "Reviews word", "default": "reviews"}
-  ],
-  "presets": [{"name": "Blocko Rating Stars"}],
-  "enabled_on": {"templates": ["product"]}
-}
+{"name":"Blocko Rating Stars","settings":[{"type":"color","id":"color","label":"Star color","default":"#6538bd"},{"type":"text","id":"label","label":"Reviews word","default":"reviews"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"presets":[{"name":"Blocko Rating Stars"}],"enabled_on":{"templates":["product"]}}
 {% endschema %}

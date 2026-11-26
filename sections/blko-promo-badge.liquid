@@ -1,73 +1,128 @@
 <i hidden data-blko-block="promo-badge"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
 {%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
+{%- liquid
   assign s = section.settings
   assign now = 'now' | date: '%s' | plus: 0
   assign pid = product.id | append: ''
+  assign pcs = product.collections | map: 'handle'
+  assign types = 'milestone-reward,gift-with-cart-value,buy-x-get-y,gift-with-quantity-purchase,gift-with-collection-value,shipping-goal,order-goal'
   assign camp = nil
+  assign anyc = false
   if s.use_aov
     for c in shop.metafields.avada_free_gifts.giftCampaigns.value
-      if c.status == 'active'
-        assign ok = true
-        if c.enabledEndDate and c.endDate
-          assign e = c.endDate | date: '%s' | plus: 0
-          if e < now
-            assign ok = false
-          endif
-        endif
-        if ok
-          assign camp = c
-          break
-        endif
+      assign e = c.endDate | date: '%s' | plus: 0
+      assign st = c.startDate | date: '%s' | plus: 0
+      assign okc = false
+      if c.status == 'active' and st <= now
+        assign okc = true
       endif
-    endfor
-    if camp and camp.enabledExcludedProducts
-      for x in camp.excludedProducts
+      if c.enabledEndDate and e < now
+        assign okc = false
+      endif
+      if okc
+        assign anyc = true
+      endif
+      unless types contains c.type
+        assign okc = false
+      endunless
+      for x in c.excludedProducts
         assign xid = x.id | default: x | append: ''
-        if xid == pid
-          assign camp = nil
+        if c.enabledExcludedProducts and xid == pid
+          assign okc = false
         endif
       endfor
-    endif
+      if okc and c.type == 'buy-x-get-y' or okc and c.type == 'gift-with-collection-value'
+        assign okc = false
+        assign tps = c.triggerProducts | map: 'id'
+        assign gps = c.giftProducts | map: 'id'
+        if tps contains pid or gps contains pid
+          assign okc = true
+        endif
+        for tc in c.triggerCollections
+          if pcs contains tc.handle
+            assign okc = true
+          endif
+        endfor
+      endif
+      if okc
+        assign camp = c
+        break
+      endif
+    endfor
   endif
   assign line = ''
   assign bg = '#eeeeee'
   assign fg = '#1c1c1c'
-  if camp and camp.discountInformation.size > 0
+  if camp
     assign t = camp.discountInformation.first
     assign b = shop.metafields.avada_free_gifts.dealBadgeDesignSetting.value
     assign bg = b.newBgColor | default: bg
     assign fg = b.primaryTextColor | default: fg
+    assign gps = camp.giftProducts | map: 'id'
     assign is_gift = false
-    for g in camp.giftProducts
-      assign gid = g.id | append: ''
-      if gid == pid
-        assign is_gift = true
-      endif
-    endfor
-    if t.discountType == 'percentage'
-      assign disc = t.discountValue | append: '%'
-    else
-      assign disc = t.discountValue | times: 100 | money
+    if gps contains pid
+      assign is_gift = true
     endif
-    if camp.giftProducts.size > 0
-      assign reward = camp.giftProducts.first.title
+    if camp.discountType == 'percentage'
+      assign disc = camp.discountValue | append: '%'
     else
-      assign reward = t.rewardMessage | replace: '{{discount}}', disc
+      assign disc = camp.discountValue | times: 100 | money
     endif
-    if camp.triggerType == 'cart-value'
-      assign amount = t.triggerValue | times: 100 | money
-      if is_gift
-        assign tpl = s.gift_text
-      else
-        assign tpl = s.text
-      endif
-    else
-      assign amount = t.triggerQuantity
-      assign tpl = s.qty_text
-    endif
+    assign reward = camp.giftProducts.first.title
+    assign tpl = s.text
+    assign amount = camp.minimumTriggerValue | times: 100 | money
+    case camp.type
+      when 'buy-x-get-y', 'gift-with-quantity-purchase'
+        assign amount = camp.triggerQuantity
+        assign tpl = s.qty_text
+      when 'shipping-goal'
+        assign reward = s.ship
+      when 'order-goal'
+        assign reward = s.off | replace: '{discount}', disc
+        if camp.enabledTriggerQuantity
+          assign amount = camp.triggerQuantity
+          assign tpl = s.qty_text
+        endif
+      when 'milestone-reward', 'gift-with-cart-value'
+        assign amount = t.triggerValue | times: 100 | money
+        if t.discountType == 'percentage'
+          assign disc = t.discountValue | append: '%'
+        else
+          assign disc = t.discountValue | times: 100 | money
+        endif
+        if camp.giftProducts.size == 0
+          assign reward = t.rewardMessage | replace: '{{discount}}', disc
+        endif
+        if is_gift
+          assign tpl = s.gift_text
+        endif
+    endcase
     assign line = tpl | replace: '{amount}', amount | replace: '{reward}', reward
-  elsif s.badge != blank
+  elsif s.badge != blank and anyc == false
     assign show = true
     if s.collection != blank
       assign show = false
@@ -88,6 +143,7 @@
 <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 110-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 100-5c-3 0-4 5-4 5z"/></svg>{{ line | escape }}</span>
 </div>
 {%- endif -%}
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Promo Badge","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Promo Badge"}],"settings":[{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai campaign the badge shows its offer; text and colors come from AOV.ai. Settings mode: shows the badge text below on every product, or only products in the chosen collection. The badge only advertises, create the matching Shopify discount so checkout honors it."},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},{"type":"text","id":"badge","label":"Badge text (settings mode)","default":"Free gift over $60"},{"type":"collection","id":"collection","label":"Only for this collection (blank = all)"},{"type":"text","id":"text","label":"AOV offer text","default":"Spend {amount}, get {reward}"},{"type":"text","id":"gift_text","label":"AOV text on the gift product","default":"Free gift with orders over {amount}"},{"type":"text","id":"qty_text","label":"AOV text for quantity offers","default":"Buy {amount} items, get {reward}"}]}
+{"name":"Blocko Promo Badge","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Promo Badge"}],"settings":[{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai campaign that applies to this product the badge shows its offer; text and colors come from AOV.ai. Settings mode: shows the badge text below on every product, or only products in the chosen collection. The badge only advertises, create the matching Shopify discount so checkout honors it."},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},{"type":"text","id":"badge","label":"Badge text (settings mode)","default":"Free gift over $60"},{"type":"collection","id":"collection","label":"Only for this collection (blank = all)"},{"type":"text","id":"text","label":"AOV offer text","default":"Spend {amount}, get {reward}"},{"type":"text","id":"gift_text","label":"AOV text on the gift product","default":"Free gift with orders over {amount}"},{"type":"text","id":"ship","label":"AOV shipping reward","default":"free shipping"},{"type":"text","id":"off","label":"AOV order discount reward","default":"{discount} off"},{"type":"text","id":"qty_text","label":"AOV text for quantity offers","default":"Buy {amount} items, get {reward}"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

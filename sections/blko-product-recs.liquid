@@ -1,5 +1,29 @@
 <i hidden data-blko-block="product-recs"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {% assign st=section.settings %}
 <style>
 .blko-pr{max-width:1200px;margin-inline:auto;padding:40px 16px}
@@ -29,15 +53,7 @@ a.href=p.url;a.textContent=p.title;c.textContent=x;b.type='button';b.textContent
 b.onclick=()=>{b.disabled=true;fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[o?{id:v.id,quantity:1,properties:{_aov_bundles:JSON.stringify({offerId:o.id,isUpsell:true})}}:{id:v.id,quantity:1}]})}).then(x=>{if(!x.ok)throw 0;b.textContent=D;document.dispatchEvent(new CustomEvent('cart:refresh',{bubbles:true}));document.dispatchEvent(new CustomEvent('blko:cart:changed'))}).catch(()=>{b.disabled=false})};
 t.append(a,c);d.append(i,t,b);L.append(d)}
 (o?Promise.all((o.upsellProducts||[]).filter(u=>u.handle!=={{ product.handle|json }}).slice(0,o.productsPerPage||3).map(u=>fetch(r+'products/'+u.handle+'.js').then(x=>x.json()).catch(()=>0))).then(ok).then(a=>{s.querySelector('h2').textContent=o.offerTitle||'';return a}):g('complementary').then(a=>a.length?a:g('related'))).then(a=>{if(!a.length)return;a.forEach(row);s.hidden=false}).catch(()=>{})})();</script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Product Recs","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Product Recs"}],
-"settings":[
-{"type":"text","id":"heading","label":"Heading","default":"Pairs well with"},
-{"type":"range","id":"limit","label":"Products","min":2,"max":6,"step":1,"default":3},
-{"type":"text","id":"add","label":"Button text","default":"Add"},
-{"type":"text","id":"added","label":"Button text after adding","default":"Added"},
-{"type":"text","id":"price_text","label":"AOV.ai discount price text","default":"Was [was], now [now]"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when there is one","default":true},
-{"type":"paragraph","content":"Two modes. Default: Shopify's product recommendations (set complementary products in the Search & Discovery app for best results). With AOV.ai Bundle: when an active AOV.ai Product recommendation offer triggers on this product, this block shows that offer's products with its Was/now prices; the discount applies automatically in the cart, no code needed. Turn off AOV.ai's own widget to avoid a duplicate."}]}
+{"name":"Blocko Product Recs","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Product Recs"}],"settings":[{"type":"text","id":"heading","label":"Heading","default":"Pairs well with"},{"type":"range","id":"limit","label":"Products","min":2,"max":6,"step":1,"default":3},{"type":"text","id":"add","label":"Button text","default":"Add"},{"type":"text","id":"added","label":"Button text after adding","default":"Added"},{"type":"text","id":"price_text","label":"AOV.ai discount price text","default":"Was [was], now [now]"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when there is one","default":true},{"type":"paragraph","content":"Two modes. Default: Shopify's product recommendations (set complementary products in the Search & Discovery app for best results). With AOV.ai Bundle: when an active AOV.ai Product recommendation offer triggers on this product, this block shows that offer's products with its Was/now prices; the discount applies automatically in the cart, no code needed. Turn off AOV.ai's own widget to avoid a duplicate."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

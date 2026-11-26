@@ -3,15 +3,32 @@
 {%- liquid
   assign s = section.settings
   assign now = 'now' | date: '%s' | plus: 0
+  assign types = 'milestone-reward,gift-with-cart-value,gift-with-quantity-purchase,gift-with-collection-value,shipping-goal,order-goal'
   assign camp = nil
+  assign anyc = false
   if s.use_aov
     for c in shop.metafields.avada_free_gifts.giftCampaigns.value
-      if c.status == 'active' and c.triggerType == 'cart-value' and c.discountInformation.size > 0
-        assign e = c.endDate | date: '%s' | plus: 0
-        unless c.enabledEndDate and e < now
-          assign camp = c
-          break
-        endunless
+      assign e = c.endDate | date: '%s' | plus: 0
+      assign st = c.startDate | date: '%s' | plus: 0
+      assign okc = false
+      if c.status == 'active' and st <= now
+        assign okc = true
+      endif
+      if c.enabledEndDate and e < now
+        assign okc = false
+      endif
+      if okc
+        assign anyc = true
+      endif
+      unless types contains c.type
+        assign okc = false
+      endunless
+      if c.triggerType != 'cart-value' and 'milestone-reward,gift-with-cart-value' contains c.type
+        assign okc = false
+      endif
+      if okc
+        assign camp = c
+        break
       endif
     endfor
   endif
@@ -27,6 +44,7 @@
   assign dtx = '#fff'
   assign amts = ''
   assign lbls = ''
+  assign qty = false
   if camp
     assign head = s.header | default: d.headerText
     assign desc = s.desc | default: d.descriptionText
@@ -37,7 +55,32 @@
     assign ptx = d.inCompletedTextColor | default: ptx
     assign dbg = d.completedBgColor | default: dbg
     assign dtx = d.completedIconColor | default: dtx
+    assign tp = camp.triggerProducts | map: 'id'
+    assign tcl = camp.triggerCollections | map: 'handle'
     assign ti = camp.discountInformation | sort: 'triggerValue'
+    if camp.type == 'gift-with-quantity-purchase' or camp.type == 'order-goal' and camp.enabledTriggerQuantity
+      assign qty = true
+      assign pm = s.progress_qty
+    endif
+    if ti.size == 0 or camp.type != 'milestone-reward' and camp.type != 'gift-with-cart-value'
+      if qty
+        assign tv = camp.triggerQuantity | plus: 0
+      else
+        assign tv = camp.minimumTriggerValue | times: 100 | round
+      endif
+      if camp.discountType == 'percentage'
+        assign disc = camp.discountValue | append: '%'
+      else
+        assign disc = camp.discountValue | times: 100 | money
+      endif
+      assign reward = camp.giftProducts.first.title | default: s.ship
+      if camp.type == 'order-goal'
+        assign reward = s.off | replace: '{discount}', disc
+      endif
+      assign amts = tv | append: '~'
+      assign lbls = reward | append: '~'
+      assign ti = nil
+    endif
     for t in ti
       if t.discountType == 'percentage'
         assign disc = t.discountValue | append: '%'
@@ -54,7 +97,7 @@
       assign amts = amts | append: tv | append: '~'
       assign lbls = lbls | append: reward | append: '~'
     endfor
-  else
+  elsif anyc == false
     assign v1 = s.a1 | times: 100 | round
     assign v2 = s.a2 | times: 100 | round
     assign v3 = s.a3 | times: 100 | round
@@ -73,14 +116,18 @@
 {%- liquid
   assign amt = cents | money
   assign row = s.spend | replace: '{amount}', amt
+  if qty
+    assign row = s.spend_qty | replace: '{amount}', cents
+  endif
   assign lb = ll[forloop.index0]
 -%}<li data-a="{{ cents }}"><span>{{ row | escape }}{% if lb != blank %}: {{ lb | escape }}{% endif %}</span><em></em></li>
 {%- endif -%}
 {%- endfor -%}</ul>
 </div>
-<script>(()=>{const r=document.getElementById('blko-tr-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',F={{ shop.money_format | json }},P={{ pm | json }},Z={{ zm | json }},G={{ s.togo | json }};
-let q;const m=c=>F.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
-u=async()=>{try{const v=(await(await fetch(R+'cart.js')).json()).items.filter(i=>!(i.properties&&(i.properties._aovCampId||i.properties._blko_gift))).reduce((a,i)=>a+i.final_line_price,0);let n;
+<script>(()=>{const r=document.getElementById('blko-tr-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',F={{ shop.money_format | json }},P={{ pm | json }},Z={{ zm | json }},G={{ s.togo | json }},Q={{ qty | json }},IH=({{ tp | json }}||[]).map(Number),CH={{ tcl | json }}||[],S=new Set(IH);
+let q;const m=c=>Q?c:F.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+u=async()=>{try{if(CH.length&&!S.size)for(const h of CH)try{(await(await fetch(R+'collections/'+h+'/products.json?limit=250')).json()).products.forEach(x=>S.add(x.id))}catch(e){}
+const v=(await(await fetch(R+'cart.js')).json()).items.filter(i=>!(i.properties&&(i.properties._aovCampId||i.properties._blko_gift))&&(!(IH.length+CH.length)||S.has(i.product_id))).reduce((a,i)=>a+(Q?i.quantity:i.original_line_price),0);let n;
 r.querySelectorAll('li').forEach(l=>{const a=+l.dataset.a,k=v>=a;l.classList.toggle('ok',k);l.lastChild.textContent=k?'✓':G.replace('{amount}',m(a-v));if(!k&&!n)n=a});
 r.querySelector('p+p').textContent=n?P.replace(/\{\{?(?:progress_amount|amount)\}\}?/,m(n-v)).replace(/\{\{?gift_number\}\}?/,'1'):Z}catch(e){}},
 w=()=>{clearTimeout(q);q=setTimeout(u,350)};
@@ -88,5 +135,5 @@ new PerformanceObserver(l=>l.getEntries().some(e=>/\/cart\/(add|change|update)/.
 ['cart:updated','cart:refresh','blko:cart:changed'].forEach(e=>document.addEventListener(e,w));u()})()</script>
 {%- endif -%}
 {% schema %}
-{"name":"Blocko Tiered Rewards","enabled_on":{"templates":["cart","product"]},"presets":[{"name":"Blocko Tiered Rewards"}],"settings":[{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai cart-value campaign it lists that campaign's tiers and progress. Settings mode: up to 3 tiers below, smallest amount first. It only DISPLAYS tiers; create the matching Shopify discounts or gifts so checkout delivers them."},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},{"type":"text","id":"header","label":"Header (blank = AOV.ai / Rewards)"},{"type":"text","id":"desc","label":"Description (blank = AOV.ai)"},{"type":"text","id":"spend","label":"Tier label","default":"Spend {amount}"},{"type":"text","id":"togo","label":"To go text","default":"{amount} to go"},{"type":"text","id":"progress","label":"Progress text","default":"Spend {amount} more for your next reward"},{"type":"text","id":"done","label":"All unlocked text","default":"You unlocked every reward"},{"type":"number","id":"a1","label":"Tier 1 amount (shop currency)","default":30},{"type":"text","id":"l1","label":"Tier 1 reward","default":"Free shipping"},{"type":"number","id":"a2","label":"Tier 2 amount"},{"type":"text","id":"l2","label":"Tier 2 reward"},{"type":"number","id":"a3","label":"Tier 3 amount"},{"type":"text","id":"l3","label":"Tier 3 reward"}]}
+{"name":"Blocko Tiered Rewards","enabled_on":{"templates":["cart","product"]},"presets":[{"name":"Blocko Tiered Rewards"}],"settings":[{"type":"paragraph","content":"Two modes. AOV mode: with an active AOV.ai campaign (milestone, cart value, quantity, collection, shipping or order goal) it lists its tiers and progress; nothing shows if the active campaign has no tiers. Settings mode: up to 3 tiers below, smallest amount first. It only DISPLAYS tiers; create the matching Shopify discounts or gifts so checkout delivers them."},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai campaign when there is one","default":true},{"type":"text","id":"header","label":"Header (blank = AOV.ai / Rewards)"},{"type":"text","id":"desc","label":"Description (blank = AOV.ai)"},{"type":"text","id":"spend","label":"Tier label","default":"Spend {amount}"},{"type":"text","id":"spend_qty","label":"AOV tier label (items)","default":"Buy {amount} items"},{"type":"text","id":"progress_qty","label":"Progress text (items)","default":"Add {amount} more items for your next reward"},{"type":"text","id":"ship","label":"AOV shipping reward","default":"Free shipping"},{"type":"text","id":"off","label":"AOV discount reward","default":"{discount} off"},{"type":"text","id":"togo","label":"To go text","default":"{amount} to go"},{"type":"text","id":"progress","label":"Progress text","default":"Spend {amount} more for your next reward"},{"type":"text","id":"done","label":"All unlocked text","default":"You unlocked every reward"},{"type":"number","id":"a1","label":"Tier 1 amount (shop currency)","default":30},{"type":"text","id":"l1","label":"Tier 1 reward","default":"Free shipping"},{"type":"number","id":"a2","label":"Tier 2 amount"},{"type":"text","id":"l2","label":"Tier 2 reward"},{"type":"number","id":"a3","label":"Tier 3 amount"},{"type":"text","id":"l3","label":"Tier 3 reward"}]}
 {% endschema %}

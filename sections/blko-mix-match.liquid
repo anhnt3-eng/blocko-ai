@@ -1,5 +1,29 @@
 <i hidden data-blko-block="mix-match"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {% assign st=section.settings %}{% assign fx=st.price|times:100|round|money %}{% assign hl=st.headline|replace:'{n}',st.size|replace:'{price}',fx %}
 {%- capture gj -%}[{% assign sp='' %}{% for p in st.collection.products limit:8 %}{% if p.available %}{{ sp }}{"id":{{ p.first_available_variant.id }},"p":{{ p.first_available_variant.price }},"q":1,"t":{{ p.title|json }},"i":{{ p.featured_image|image_url:width:96|json }}}{% assign sp=',' %}{% endif %}{% endfor %}]{%- endcapture -%}
 <style>
@@ -42,18 +66,7 @@ a=await fetch(r+'cart/add.js',{method:'POST',headers:J,body:JSON.stringify({item
 if(o&&o.code){var c=(await(await fetch(r+'cart.js')).json()).discount_codes.map(d=>d.code);if(!c.includes(o.code))c.push(o.code);
 await fetch(r+'cart/update.js',{method:'POST',headers:J,body:JSON.stringify({discount:c.join(',')})})}
 location.href=r+'cart'}catch(x){u();b.textContent=x.description||b.textContent}}})();</script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Mix & Match","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Mix & Match"}],
-"settings":[
-{"type":"text","id":"heading","label":"Heading","default":"Mix and match"},
-{"type":"text","id":"sub","label":"Subtitle","default":"Mix any items you like"},
-{"type":"collection","id":"collection","label":"Collection"},
-{"type":"range","id":"size","label":"Items per box","min":2,"max":6,"default":3},
-{"type":"number","id":"price","label":"Bundle price","default":40},
-{"type":"text","id":"headline","label":"Headline ({n}, {price})","default":"Any {n} for {price}"},
-{"type":"text","id":"pick","label":"Button before full ({price} = picked)","default":"Pick {n} more · {price}"},
-{"type":"text","id":"add","label":"Button when full","default":"Add box · {price}"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when there is one","default":true},
-{"type":"paragraph","content":"Two modes. Default: pick items from the collection for the bundle price above (display only: create a matching Shopify automatic discount so checkout charges it). With AOV.ai Bundle: on the product page of an active AOV.ai Mix & match offer, this block shows that offer's options and discount, adds the bundle with its code, and ignores the collection and price. Turn off AOV.ai's own widget to avoid a duplicate."}]}
+{"name":"Blocko Mix & Match","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Mix & Match"}],"settings":[{"type":"text","id":"heading","label":"Heading","default":"Mix and match"},{"type":"text","id":"sub","label":"Subtitle","default":"Mix any items you like"},{"type":"collection","id":"collection","label":"Collection"},{"type":"range","id":"size","label":"Items per box","min":2,"max":6,"default":3},{"type":"number","id":"price","label":"Bundle price","default":40},{"type":"text","id":"headline","label":"Headline ({n}, {price})","default":"Any {n} for {price}"},{"type":"text","id":"pick","label":"Button before full ({price} = picked)","default":"Pick {n} more · {price}"},{"type":"text","id":"add","label":"Button when full","default":"Add box · {price}"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"checkbox","id":"use_aov","label":"Use the AOV.ai offer when there is one","default":true},{"type":"paragraph","content":"Two modes. Default: pick items from the collection for the bundle price above (display only: create a matching Shopify automatic discount so checkout charges it). With AOV.ai Bundle: on the product page of an active AOV.ai Mix & match offer, this block shows that offer's options and discount, adds the bundle with its code, and ignores the collection and price. Turn off AOV.ai's own widget to avoid a duplicate."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

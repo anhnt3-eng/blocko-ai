@@ -1,9 +1,34 @@
 <i hidden data-blko-block="wishlist-button"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 <script src="/apps/blocko/wishlist.js" defer></script>
 {% assign v = product.selected_or_first_available_variant %}
 <div class="blko-wlb" id="blko-wlb-{{ section.id }}" data-blko-wl="button"><script type="application/json" data-blko-cfg>{"save":{{ section.settings.label_save | json }},"saved":{{ section.settings.label_saved | json }},"color":{{ section.settings.color | json }},"item":{"handle":{{ product.handle | json }},"id":{{ product.id }},"title":{{ product.title | json }},"image":{% if product.featured_image %}{{ product.featured_image | image_url: width: 400 | json }}{% else %}""{% endif %},"price":{{ v.price | default: 0 }},"variantId":{{ v.id | default: 0 }}}}</script></div>
 <style>.blko-wlb{max-width:1200px;margin-inline:auto;padding:16px}</style>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Wishlist Button","settings":[{"type":"text","id":"label_save","label":"Save","default":"Save"},{"type":"text","id":"label_saved","label":"Saved","default":"Saved"},{"type":"color","id":"color","label":"Accent","default":"#6538bd"}],"presets":[{"name":"Blocko Wishlist Button"}],"enabled_on":{"templates":["product"]}}
+{"name":"Blocko Wishlist Button","settings":[{"type":"text","id":"label_save","label":"Save","default":"Save"},{"type":"text","id":"label_saved","label":"Saved","default":"Saved"},{"type":"color","id":"color","label":"Accent","default":"#6538bd"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"presets":[{"name":"Blocko Wishlist Button"}],"enabled_on":{"templates":["product"]}}
 {% endschema %}

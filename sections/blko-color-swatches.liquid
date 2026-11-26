@@ -1,5 +1,29 @@
 <i hidden data-blko-block="color-swatches"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {% assign st=section.settings %}{% assign ids=st.products | map: 'id' %}
 {% if st.products.size >= 2 and ids contains product.id %}
 <style>
@@ -20,12 +44,7 @@
 {% endif %}{% endfor %}
 </div></div>
 {% endif %}
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Color Swatches","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Color Swatches"}],
-"settings":[
-{"type":"product_list","id":"products","label":"Products (colors of one item)","limit":12},
-{"type":"text","id":"label","label":"Label","default":"Color"},
-{"type":"select","id":"style","label":"Swatch style","default":"image","options":[{"value":"image","label":"Product image"},{"value":"color","label":"Color circle"}]},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Pick the products sold as colors of one item. Add this section to each of them."}]}
+{"name":"Blocko Color Swatches","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Color Swatches"}],"settings":[{"type":"product_list","id":"products","label":"Products (colors of one item)","limit":12},{"type":"text","id":"label","label":"Label","default":"Color"},{"type":"select","id":"style","label":"Swatch style","default":"image","options":[{"value":"image","label":"Product image"},{"value":"color","label":"Color circle"}]},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"Pick the products sold as colors of one item. Add this section to each of them."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

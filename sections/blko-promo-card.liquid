@@ -1,5 +1,29 @@
 <i hidden data-blko-block="promo-card"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {%- assign s = section.settings -%}
 {%- assign ok = true -%}
 {%- assign today = 'now' | date: '%Y-%m-%d' | remove: '-' | plus: 0 -%}
@@ -33,18 +57,7 @@ function ok(){b.textContent={{ s.copied | json }};setTimeout(function(){b.textCo
 function fb(){getSelection().selectAllChildren(c);try{document.execCommand('copy')&&ok()}catch(x){}}
 if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,fb);else fb()}})();</script>
 {%- endif -%}
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Promo Card","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Promo Card"}],
-"settings":[
-{"type":"text","id":"badge","label":"Badge","default":"Limited offer"},
-{"type":"text","id":"heading","label":"Heading","default":"Buy 2, get 10% off"},
-{"type":"textarea","id":"body","label":"Body text","default":"Add two to your cart and save."},
-{"type":"text","id":"code","label":"Discount code (optional)"},
-{"type":"text","id":"copy","label":"Copy button","default":"Copy"},
-{"type":"text","id":"copied","label":"Copied text","default":"Copied"},
-{"type":"text","id":"apply","label":"Apply link text","default":"Apply"},
-{"type":"text","id":"end","label":"End date (optional)","info":"YYYY-MM-DD. Card hides after this date."},
-{"type":"collection","id":"collection","label":"Only show for collection (optional)"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"This card is display only. Create the matching discount code in Shopify (Discounts) so checkout applies the offer."}]}
+{"name":"Blocko Promo Card","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Promo Card"}],"settings":[{"type":"text","id":"badge","label":"Badge","default":"Limited offer"},{"type":"text","id":"heading","label":"Heading","default":"Buy 2, get 10% off"},{"type":"textarea","id":"body","label":"Body text","default":"Add two to your cart and save."},{"type":"text","id":"code","label":"Discount code (optional)"},{"type":"text","id":"copy","label":"Copy button","default":"Copy"},{"type":"text","id":"copied","label":"Copied text","default":"Copied"},{"type":"text","id":"apply","label":"Apply link text","default":"Apply"},{"type":"text","id":"end","label":"End date (optional)","info":"YYYY-MM-DD. Card hides after this date."},{"type":"collection","id":"collection","label":"Only show for collection (optional)"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"This card is display only. Create the matching discount code in Shopify (Discounts) so checkout applies the offer."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

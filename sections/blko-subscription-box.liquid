@@ -1,5 +1,29 @@
 <i hidden data-blko-block="subscription-box"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {% assign st=section.settings %}{% assign g=product.selling_plan_groups.first %}{% assign pa=g.selling_plans[0].id %}{% assign pb=g.selling_plans[1].id|default:pa %}
 <style>
 .blko-sb{max-width:1200px;margin-inline:auto;padding:40px 16px;
@@ -21,16 +45,7 @@
 </div>
 <script>(()=>{var s=document.getElementById('blko-sb-{{ section.id }}'),a=s.querySelector('.a'),B=s.querySelectorAll('.f button');
 B.forEach(x=>x.onclick=()=>{B.forEach(y=>y.classList.toggle('on',y==x));if(a)a.href='{{ product.url }}?selling_plan='+x.dataset.p})})();</script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Subscription Box","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Subscription Box"}],
-"settings":[
-{"type":"text","id":"heading","label":"Heading","default":"Subscribe and get the box"},
-{"type":"text","id":"f1","label":"Frequency 1","default":"Every month"},
-{"type":"text","id":"f2","label":"Frequency 2","default":"Every 2 months"},
-{"type":"product_list","id":"list","label":"Products in the box","limit":3},
-{"type":"text","id":"button","label":"Subscribe button","default":"Subscribe"},
-{"type":"text","id":"note","label":"No selling plan note","default":"Subscriptions are not set up for this product yet."},
-{"type":"text","id":"foot","label":"Footnote"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"The Subscribe button shows only if this product has a selling plan (Shopify subscription app). Plan 1 and 2 of its first group match the two frequencies."}]}
+{"name":"Blocko Subscription Box","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Subscription Box"}],"settings":[{"type":"text","id":"heading","label":"Heading","default":"Subscribe and get the box"},{"type":"text","id":"f1","label":"Frequency 1","default":"Every month"},{"type":"text","id":"f2","label":"Frequency 2","default":"Every 2 months"},{"type":"product_list","id":"list","label":"Products in the box","limit":3},{"type":"text","id":"button","label":"Subscribe button","default":"Subscribe"},{"type":"text","id":"note","label":"No selling plan note","default":"Subscriptions are not set up for this product yet."},{"type":"text","id":"foot","label":"Footnote"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"The Subscribe button shows only if this product has a selling plan (Shopify subscription app). Plan 1 and 2 of its first group match the two frequencies."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

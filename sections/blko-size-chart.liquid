@@ -1,5 +1,29 @@
 <i hidden data-blko-block="size-chart"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 <div class="blko-sc" id="blko-sc-{{ section.id }}">
 <style>
 #blko-sc-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:20px 16px;font:inherit;--c:{{ section.settings.color }}}
@@ -38,20 +62,7 @@ r.querySelector('.x').addEventListener('click',function(){d.close()});
 d.addEventListener('click',function(e){if(e.target===d)d.close()});
 })();
 </script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Size Chart","settings":[
-{"type":"paragraph","content":"The 4 example rows below are EXAMPLE values. Edit them to match your real sizes."},
-{"type":"text","id":"button","label":"Button text","default":"Size chart"},
-{"type":"text","id":"header","label":"Columns (comma-separated)","default":"Size,Chest,Waist,Hips"},
-{"type":"text","id":"unit","label":"Unit note","default":"All measurements in inches."},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}],
-"blocks":[{"type":"row","name":"Row","settings":[
-{"type":"text","id":"label","label":"Size label","default":"S"},
-{"type":"text","id":"values","label":"Values (comma-separated)","default":"36,30,38"}]}],
-"presets":[{"name":"Blocko Size Chart","blocks":[
-{"type":"row","settings":{"label":"XS","values":"34,28,36"}},
-{"type":"row","settings":{"label":"S","values":"36,30,38"}},
-{"type":"row","settings":{"label":"M","values":"38,32,40"}},
-{"type":"row","settings":{"label":"L","values":"40,34,42"}}]}],
-"enabled_on":{"templates":["product"]}}
+{"name":"Blocko Size Chart","settings":[{"type":"paragraph","content":"The 4 example rows below are EXAMPLE values. Edit them to match your real sizes."},{"type":"text","id":"button","label":"Button text","default":"Size chart"},{"type":"text","id":"header","label":"Columns (comma-separated)","default":"Size,Chest,Waist,Hips"},{"type":"text","id":"unit","label":"Unit note","default":"All measurements in inches."},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}],"blocks":[{"type":"row","name":"Row","settings":[{"type":"text","id":"label","label":"Size label","default":"S"},{"type":"text","id":"values","label":"Values (comma-separated)","default":"36,30,38"}]}],"presets":[{"name":"Blocko Size Chart","blocks":[{"type":"row","settings":{"label":"XS","values":"34,28,36"}},{"type":"row","settings":{"label":"S","values":"36,30,38"}},{"type":"row","settings":{"label":"M","values":"38,32,40"}},{"type":"row","settings":{"label":"L","values":"40,34,42"}}]}],"enabled_on":{"templates":["product"]}}
 {% endschema %}

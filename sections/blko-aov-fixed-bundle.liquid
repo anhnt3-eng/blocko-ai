@@ -1,5 +1,29 @@
 <i hidden data-blko-block="aov-fixed-bundle"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 <div class="blko-fb" id="blko-fb-{{ section.id }}" style="--c:{{ section.settings.color }}" hidden>
 <style>.blko-fb{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}.blko-fb[hidden]{display:none}.blko-fb .l{display:grid;gap:10px;max-width:560px}.blko-fb .r{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;color:#17151d;border:1px solid rgba(0,0,0,.12);border-radius:12px}.blko-fb img{width:64px;height:64px;object-fit:cover;border-radius:8px}.blko-fb .g{flex:1;min-width:0;display:grid;gap:2px}.blko-fb a{color:inherit;font-weight:600}.blko-fb .p{border-color:var(--c)}.blko-fb .p a{color:var(--c)}.blko-fb .sv{color:var(--c);font-weight:600}</style>
 <h2></h2><div class="l"></div></div>
@@ -25,11 +49,7 @@ const v=b.discountType==='percentage'?b.discountValue+'%':m(b.discountValue*100)
 d.className='r p';img(p,d);t.className='g';d.appendChild(t);
 e('span',PR.replace('[off]',v).replace('[title]',p.title),t);e('a',LK,t).href=p.url;s.hidden=false})}
 })();</script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko AOV Fixed Bundle","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko AOV Fixed Bundle"}],"settings":[{"type":"paragraph","content":"Shows AOV.ai Fixed bundle info: contents on the bundle page, a promo card on component products. Turn off AOV.ai's widget to avoid a duplicate."},
-{"type":"text","id":"included","label":"Bundle page heading","default":"Included in this bundle"},
-{"type":"text","id":"saving","label":"Saving text","default":"You save [amount] vs buying separately"},
-{"type":"text","id":"promo","label":"Promo text","default":"Save [off] with [title]"},
-{"type":"text","id":"link","label":"Link text","default":"View bundle"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
+{"name":"Blocko AOV Fixed Bundle","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko AOV Fixed Bundle"}],"settings":[{"type":"paragraph","content":"Shows AOV.ai Fixed bundle info: contents on the bundle page, a promo card on component products. Turn off AOV.ai's widget to avoid a duplicate."},{"type":"text","id":"included","label":"Bundle page heading","default":"Included in this bundle"},{"type":"text","id":"saving","label":"Saving text","default":"You save [amount] vs buying separately"},{"type":"text","id":"promo","label":"Promo text","default":"Save [off] with [title]"},{"type":"text","id":"link","label":"Link text","default":"View bundle"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}

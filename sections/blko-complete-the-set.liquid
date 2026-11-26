@@ -1,5 +1,29 @@
 <i hidden data-blko-block="complete-the-set"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
 {% assign st = section.settings %}{% assign a = product.first_available_variant %}{% assign b = st.p1 %}{% assign c = st.p2 %}{% assign vb = b.first_available_variant %}{% assign vc = c.first_available_variant %}
 {% capture ia %}{% if product.featured_image %}<img width="56" height="56" src="{{ product.featured_image|image_url: width: 56 }}" alt="">{% endif %}{% endcapture %}
 <style>
@@ -27,18 +51,7 @@
 <script>(()=>{var s=document.getElementById('blko-cs-{{ section.id }}'),b=s.querySelector('button'),r=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',t=b.textContent;
 b.onclick=()=>{var f=document.querySelector('form[action*="/cart/add"] [name=id]'),i=s.querySelector('input:checked').value.split(',');if(f&&f.value)i[0]=f.value;b.disabled=true;
 fetch(r+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:i.map(x=>({id:+x,quantity:1}))})}).then(x=>x.json().then(j=>{if(!x.ok)throw j;location.href=r+'cart'})).catch(e=>{b.disabled=false;b.textContent=e.description||t})}})();</script>
+{%- endif -%}
 {% schema %}
-{"name":"Blocko Complete the Set","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Complete the Set"}],
-"settings":[
-{"type":"text","id":"heading","label":"Heading","default":"Complete the set"},
-{"type":"product","id":"p1","label":"Product 2"},
-{"type":"product","id":"p2","label":"Product 3"},
-{"type":"text","id":"l1","label":"Label 1","default":"1 item"},
-{"type":"text","id":"l2","label":"Label 2","default":"The duo"},
-{"type":"text","id":"l3","label":"Label 3","default":"The full set"},
-{"type":"range","id":"off2","label":"Duo saving %","min":0,"max":50,"default":10},
-{"type":"range","id":"off3","label":"Set saving %","min":0,"max":50,"default":15},
-{"type":"text","id":"button","label":"Button text","default":"Add to cart"},
-{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
-{"type":"paragraph","content":"Savings are display only. Create a matching Shopify automatic discount so checkout charges this price."}]}
+{"name":"Blocko Complete the Set","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Complete the Set"}],"settings":[{"type":"text","id":"heading","label":"Heading","default":"Complete the set"},{"type":"product","id":"p1","label":"Product 2"},{"type":"product","id":"p2","label":"Product 3"},{"type":"text","id":"l1","label":"Label 1","default":"1 item"},{"type":"text","id":"l2","label":"Label 2","default":"The duo"},{"type":"text","id":"l3","label":"Label 3","default":"The full set"},{"type":"range","id":"off2","label":"Duo saving %","min":0,"max":50,"default":10},{"type":"range","id":"off3","label":"Set saving %","min":0,"max":50,"default":15},{"type":"text","id":"button","label":"Button text","default":"Add to cart"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"Savings are display only. Create a matching Shopify automatic discount so checkout charges this price."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
 {% endschema %}
