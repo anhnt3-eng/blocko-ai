@@ -1,0 +1,35 @@
+<i hidden data-blko-block="low-stock"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- assign v0 = product.selected_or_first_available_variant -%}
+{%- assign th = section.settings.threshold | default: 5 -%}
+<div class="blko-ls" id="blko-ls-{{ section.id }}" hidden>
+<style>
+#blko-ls-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:20px 16px;font:inherit;--c:{{ section.settings.color }}}
+#blko-ls-{{ section.id }} .b{max-width:360px;padding:14px 16px;border:1px solid rgba(0,0,0,.12);border-radius:12px}
+#blko-ls-{{ section.id }} .t{font-weight:600;font-size:15px;margin-bottom:8px}
+#blko-ls-{{ section.id }} .bar{height:6px;border-radius:6px;background:rgba(0,0,0,.08);overflow:hidden}
+#blko-ls-{{ section.id }} .bar i{display:block;height:100%;background:var(--c);border-radius:6px;transition:width .3s}
+</style>
+<div class="b"><div class="t"></div><div class="bar"><i></i></div></div>
+</div>
+<script>
+(function(){
+var r=document.getElementById('blko-ls-{{ section.id }}'),TH={{ th | json }},TXT={{ section.settings.text | json }},
+M={ {%- for v in product.variants -%}{%- if v.inventory_management == 'shopify' and v.inventory_policy == 'deny' -%}"{{ v.id }}":{{ v.inventory_quantity }},{%- endif -%}{%- endfor -%}"0":0},
+t=r.querySelector('.t'),f=r.querySelector('.bar i'),last;
+function sync(){var e=document.querySelector('form[action*="/cart/add"] [name="id"]'),
+id=(e&&e.value)||new URLSearchParams(location.search).get('variant')||'{{ v0.id }}';
+if(id===last)return;last=id;var n=M[id];
+if(typeof n!=='number'||n<=0||n>TH){r.hidden=true;return}
+t.textContent=TXT.split('NUM').join(String(n));f.style.width=Math.round(n/TH*100)+'%';r.hidden=false}
+sync();setInterval(sync,400);document.addEventListener('change',sync);
+})();
+</script>
+{% schema %}
+{"name":"Blocko Low Stock","settings":[
+{"type":"paragraph","content":"Uses real Shopify inventory. Shows only for variants with Shopify inventory tracking on and Continue selling when out of stock turned off."},
+{"type":"range","id":"threshold","label":"Show when stock is at or below","min":1,"max":50,"step":1,"default":5},
+{"type":"text","id":"text","label":"Text (NUM = quantity left)","default":"Only NUM left in stock"},
+{"type":"color","id":"color","label":"Bar color","default":"#d72c0d"}],
+"presets":[{"name":"Blocko Low Stock"}],"enabled_on":{"templates":["product"]}}
+{% endschema %}

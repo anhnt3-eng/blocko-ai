@@ -1,0 +1,57 @@
+<i hidden data-blko-block="size-chart"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-sc" id="blko-sc-{{ section.id }}">
+<style>
+#blko-sc-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:20px 16px;font:inherit;--c:{{ section.settings.color }}}
+#blko-sc-{{ section.id }} .o{padding:11px 18px;border:1px solid var(--c);border-radius:12px;background:#fff;color:var(--c);font:inherit;font-weight:600;cursor:pointer}
+#blko-sc-{{ section.id }} dialog{width:min(560px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:20px;border:0;border-radius:12px;font:inherit;color:#222}
+#blko-sc-{{ section.id }} dialog::backdrop{background:rgba(0,0,0,.5)}
+#blko-sc-{{ section.id }} h3{margin:0 0 12px;font-size:18px}
+#blko-sc-{{ section.id }} .x{position:absolute;top:10px;right:12px;border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:inherit}
+#blko-sc-{{ section.id }} .tw{overflow-x:auto}
+#blko-sc-{{ section.id }} table{width:100%;border-collapse:collapse;font-size:14px}
+#blko-sc-{{ section.id }} th,#blko-sc-{{ section.id }} td{padding:9px 10px;border:1px solid rgba(0,0,0,.12);text-align:center}
+#blko-sc-{{ section.id }} th{background:var(--c);color:#fff}
+#blko-sc-{{ section.id }} .u{margin:10px 0 0;font-size:13px;opacity:.7}
+</style>
+<button type="button" class="o">{{ section.settings.button }}</button>
+<dialog aria-label="{{ section.settings.button }}">
+<button type="button" class="x" aria-label="Close">&times;</button>
+<h3>{{ section.settings.button }}</h3>
+<div class="tw"><table><thead><tr>
+{%- assign cols = section.settings.header | split: ',' -%}
+{%- for c in cols -%}<th>{{ c | strip }}</th>{%- endfor -%}
+</tr></thead><tbody>
+{%- for b in section.blocks -%}
+{%- assign vals = b.settings.values | split: ',' -%}
+<tr {{ b.shopify_attributes }}><th>{{ b.settings.label }}</th>{%- for v in vals -%}<td>{{ v | strip }}</td>{%- endfor -%}</tr>
+{%- endfor -%}
+</tbody></table></div>
+{%- if section.settings.unit != blank -%}<p class="u">{{ section.settings.unit }}</p>{%- endif -%}
+</dialog>
+</div>
+<script>
+(function(){
+var r=document.getElementById('blko-sc-{{ section.id }}'),d=r.querySelector('dialog');
+r.querySelector('.o').addEventListener('click',function(){if(d.showModal)d.showModal();else d.setAttribute('open','')});
+r.querySelector('.x').addEventListener('click',function(){d.close()});
+d.addEventListener('click',function(e){if(e.target===d)d.close()});
+})();
+</script>
+{% schema %}
+{"name":"Blocko Size Chart","settings":[
+{"type":"paragraph","content":"The 4 example rows below are EXAMPLE values. Edit them to match your real sizes."},
+{"type":"text","id":"button","label":"Button text","default":"Size chart"},
+{"type":"text","id":"header","label":"Columns (comma-separated)","default":"Size,Chest,Waist,Hips"},
+{"type":"text","id":"unit","label":"Unit note","default":"All measurements in inches."},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}],
+"blocks":[{"type":"row","name":"Row","settings":[
+{"type":"text","id":"label","label":"Size label","default":"S"},
+{"type":"text","id":"values","label":"Values (comma-separated)","default":"36,30,38"}]}],
+"presets":[{"name":"Blocko Size Chart","blocks":[
+{"type":"row","settings":{"label":"XS","values":"34,28,36"}},
+{"type":"row","settings":{"label":"S","values":"36,30,38"}},
+{"type":"row","settings":{"label":"M","values":"38,32,40"}},
+{"type":"row","settings":{"label":"L","values":"40,34,42"}}]}],
+"enabled_on":{"templates":["product"]}}
+{% endschema %}

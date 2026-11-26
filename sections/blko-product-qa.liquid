@@ -1,0 +1,113 @@
+{%- comment -%}Blocko Product Q&A. Answered questions come from /apps/blocko/questions, new ones go to /apps/blocko/question.{%- endcomment -%}
+<i hidden data-blko-block="product-qa"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- if product -%}
+<div class="blko-qa" id="blko-qa-{{ section.id }}" style="--blko-qa-accent: {{ section.settings.color }}">
+  <h2 class="blko-qa__title">{{ section.settings.heading | escape }}</h2>
+  <div class="blko-qa__list" aria-live="polite"></div>
+  <p class="blko-qa__empty" hidden>{{ section.settings.empty_text | escape }}</p>
+  <h3 class="blko-qa__ask">{{ section.settings.ask_heading | escape }}</h3>
+  <form class="blko-qa__form" novalidate>
+    <input name="name" placeholder="{{ section.settings.name_label | escape }}" required maxlength="60" value="{{ customer.first_name | escape }}" aria-label="{{ section.settings.name_label | escape }}">
+    <input name="email" type="email" placeholder="{{ section.settings.email_label | escape }}" maxlength="200" value="{{ customer.email | escape }}" aria-label="{{ section.settings.email_label | escape }}">
+    <textarea name="question" placeholder="{{ section.settings.question_label | escape }}" required minlength="5" maxlength="500" rows="3" aria-label="{{ section.settings.question_label | escape }}"></textarea>
+    <button type="submit" class="blko-qa__btn">{{ section.settings.button_text | escape }}</button>
+    <p class="blko-qa__msg" role="status"></p>
+  </form>
+</div>
+<script>
+(function () {
+  var root = document.getElementById('blko-qa-{{ section.id }}');
+  if (!root) return;
+  var base = ((window.Shopify && Shopify.routes && Shopify.routes.root) || '/') + 'apps/blocko/';
+  var list = root.querySelector('.blko-qa__list');
+  var empty = root.querySelector('.blko-qa__empty');
+  var form = root.querySelector('form');
+  var msg = root.querySelector('.blko-qa__msg');
+  var texts = {
+    success: {{ section.settings.success_text | json }},
+    error: {{ section.settings.error_text | json }}
+  };
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text) n.textContent = text;
+    return n;
+  }
+  function render(items) {
+    list.textContent = '';
+    empty.hidden = items.length > 0;
+    items.forEach(function (q) {
+      var d = el('details', 'blko-qa__item');
+      d.appendChild(el('summary', 'blko-qa__q', q.question));
+      d.appendChild(el('p', 'blko-qa__a', q.answer));
+      var when = q.date ? new Date(q.date).toLocaleDateString() : '';
+      d.appendChild(el('p', 'blko-qa__by', q.name + (when ? ' · ' + when : '')));
+      list.appendChild(d);
+    });
+  }
+  fetch(base + 'questions?product={{ product.id }}')
+    .then(function (r) { if (!r.ok) throw r; return r.json(); })
+    .then(function (data) { render(data.questions || []); })
+    .catch(function () { render([]); });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    var d = new FormData(form);
+    var btn = form.querySelector('button');
+    btn.disabled = true;
+    msg.textContent = '';
+    fetch(base + 'question', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name: d.get('name'), email: d.get('email'), question: d.get('question'),
+        productId: '{{ product.id }}', productHandle: {{ product.handle | json }},
+        productTitle: {{ product.title | json }},
+        block: 'product-qa', section: '{{ section.id }}'
+      })
+    }).then(function (r) {
+      if (!r.ok) throw r;
+      form.reset();
+      msg.textContent = texts.success;
+    }).catch(function () {
+      msg.textContent = texts.error;
+    }).finally(function () { btn.disabled = false; });
+  });
+})();
+</script>
+{%- endif -%}
+<style>
+  .blko-qa { --blko-qa-accent: #6538bd; max-width: 1200px; margin-inline: auto; padding: 40px 16px; font: inherit; }
+  .blko-qa__list { display: grid; gap: 8px; margin: 16px 0; }
+  .blko-qa__item { border: 1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 12px 16px; }
+  .blko-qa__q { cursor: pointer; font-weight: 600; }
+  .blko-qa__item[open] .blko-qa__q { color: var(--blko-qa-accent); }
+  .blko-qa__a { margin: 8px 0 4px; white-space: pre-line; }
+  .blko-qa__by { margin: 0; font-size: .85em; opacity: .65; }
+  .blko-qa__empty { opacity: .7; }
+  .blko-qa__form { display: grid; gap: 12px; max-width: 640px; }
+  .blko-qa__form input, .blko-qa__form textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; font: inherit; border: 1px solid rgba(0,0,0,.2); border-radius: 12px; }
+  .blko-qa__btn { justify-self: start; padding: 10px 22px; font: inherit; color: #fff; background: var(--blko-qa-accent); border: 0; border-radius: 12px; cursor: pointer; }
+  .blko-qa__btn:disabled { opacity: .6; cursor: default; }
+  .blko-qa__msg { min-height: 1.2em; margin: 0; }
+</style>
+{% schema %}
+{
+  "name": "Blocko Product Q&A",
+  "settings": [
+    {"type": "text", "id": "heading", "label": "Heading", "default": "Questions & answers"},
+    {"type": "text", "id": "empty_text", "label": "No questions text", "default": "No questions yet. Be the first to ask."},
+    {"type": "text", "id": "ask_heading", "label": "Form heading", "default": "Ask a question"},
+    {"type": "text", "id": "name_label", "label": "Name placeholder", "default": "Your name"},
+    {"type": "text", "id": "email_label", "label": "Email placeholder", "default": "Email (optional)"},
+    {"type": "text", "id": "question_label", "label": "Question placeholder", "default": "Your question"},
+    {"type": "text", "id": "button_text", "label": "Button text", "default": "Ask a question"},
+    {"type": "text", "id": "success_text", "label": "Success text", "default": "Thanks! We'll post the answer here."},
+    {"type": "text", "id": "error_text", "label": "Error text", "default": "Could not send your question. Please try again."},
+    {"type": "color", "id": "color", "label": "Accent color", "default": "#6538bd"}
+  ],
+  "presets": [{"name": "Blocko Product Q&A"}],
+  "enabled_on": {"templates": ["product"]}
+}
+{% endschema %}

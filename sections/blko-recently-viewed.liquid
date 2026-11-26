@@ -1,0 +1,44 @@
+<i hidden data-blko-block="recently-viewed"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+<div class="blko-rv" id="blko-rv-{{ section.id }}" hidden>
+<style>
+#blko-rv-{{ section.id }}{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;--c:{{ section.settings.color }}}
+#blko-rv-{{ section.id }} h2{margin:0 0 16px;font-size:22px}
+#blko-rv-{{ section.id }} .g{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:750px){#blko-rv-{{ section.id }} .g{grid-template-columns:repeat(4,1fr);gap:16px}}
+#blko-rv-{{ section.id }} a{display:block;border:1px solid rgba(0,0,0,.12);border-radius:12px;overflow:hidden;color:inherit;text-decoration:none}
+#blko-rv-{{ section.id }} img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:rgba(0,0,0,.04)}
+#blko-rv-{{ section.id }} .i{padding:10px 12px}
+#blko-rv-{{ section.id }} .n{font-size:14px;font-weight:600;margin-bottom:4px}
+#blko-rv-{{ section.id }} .p{font-size:14px;color:var(--c)}
+</style>
+<h2>{{ section.settings.heading }}</h2>
+<div class="g"></div>
+</div>
+<script>
+(function(){
+var r=document.getElementById('blko-rv-{{ section.id }}'),g=r.querySelector('.g'),K='blko-rv',N={{ section.settings.count }},
+MF={{ shop.money_format | json }},R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',
+cur={{ product.handle | json }},L=[];
+try{L=JSON.parse(localStorage.getItem(K)||'[]');if(!Array.isArray(L))L=[]}catch(e){L=[]}
+if(cur){L=[cur].concat(L.filter(function(h){return h!==cur})).slice(0,12);try{localStorage.setItem(K,JSON.stringify(L))}catch(e){}}
+var H=L.filter(function(h){return h!==cur&&typeof h==='string'}).slice(0,N);
+if(!H.length)return;
+function money(c){return MF.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2))}
+Promise.all(H.map(function(h){return fetch(R+'products/'+encodeURIComponent(h)+'.js').then(function(x){return x.ok?x.json():null}).catch(function(){return null})}))
+.then(function(P){P=P.filter(Boolean);if(!P.length)return;
+P.forEach(function(p){var a=document.createElement('a'),i=document.createElement('div'),n=document.createElement('div'),pr=document.createElement('div');
+a.href=R+'products/'+p.handle;
+var src=p.featured_image;if(src){var im=document.createElement('img');im.src=src.replace(/(\.\w+)(\?|$)/,'_400x$1$2');im.alt=p.title;im.loading='lazy';a.appendChild(im)}
+i.className='i';n.className='n';n.textContent=p.title;pr.className='p';pr.textContent=money(p.price);
+i.appendChild(n);i.appendChild(pr);a.appendChild(i);g.appendChild(a)});
+r.hidden=false})
+})();
+</script>
+{% schema %}
+{"name":"Blocko Recently Viewed","settings":[
+{"type":"text","id":"heading","label":"Heading","default":"Recently viewed"},
+{"type":"range","id":"count","label":"Products to show","min":2,"max":8,"step":1,"default":4},
+{"type":"color","id":"color","label":"Price color","default":"#6538bd"}],
+"presets":[{"name":"Blocko Recently Viewed"}],"enabled_on":{"templates":["product","collection","index"]}}
+{% endschema %}

@@ -1,0 +1,85 @@
+<i hidden data-blko-block="cookie-consent"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign s = section.settings
+  assign plink = s.link
+  if plink == blank
+    assign plink = shop.privacy_policy.url
+  endif
+-%}
+<style>
+#blko-ck-{{ section.id }}{display:none;position:fixed;z-index:2147483000;box-sizing:border-box;background:#fff;color:#1a1a1a;font:inherit;font-size:14px;line-height:1.5;border:1px solid rgba(0,0,0,.12);box-shadow:0 8px 30px rgba(0,0,0,.18);padding:16px}
+#blko-ck-{{ section.id }}.is-open{display:block}
+#blko-ck-{{ section.id }}.is-bar{left:0;right:0;bottom:0;border-radius:12px 12px 0 0}
+#blko-ck-{{ section.id }}.is-card{left:16px;bottom:16px;width:calc(100% - 32px);max-width:380px;border-radius:12px}
+#blko-ck-{{ section.id }} h2{margin:0 0 6px;font-size:16px;font:inherit;font-weight:700}
+#blko-ck-{{ section.id }} p{margin:0 0 12px}
+#blko-ck-{{ section.id }} a{color:var(--blko-accent);text-decoration:underline}
+#blko-ck-{{ section.id }} .blko-ck-row{display:flex;flex-wrap:wrap;gap:8px}
+#blko-ck-{{ section.id }} button{font:inherit;font-weight:600;cursor:pointer;border-radius:12px;padding:9px 16px;border:1px solid var(--blko-accent);background:#fff;color:var(--blko-accent)}
+#blko-ck-{{ section.id }} button.p{background:var(--blko-accent);color:#fff}
+#blko-ck-{{ section.id }} .blko-ck-pref{display:none;margin:0 0 12px;border:1px solid rgba(0,0,0,.12);border-radius:12px;padding:8px 12px}
+#blko-ck-{{ section.id }} .blko-ck-pref.is-open{display:block}
+#blko-ck-{{ section.id }} label{display:flex;align-items:center;gap:8px;padding:4px 0}
+#blko-ck-{{ section.id }} input{accent-color:var(--blko-accent)}
+</style>
+<div class="blko-ck is-{{ s.pos }}" id="blko-ck-{{ section.id }}" role="region" aria-label="{{ s.heading | escape }}" style="--blko-accent:{{ s.color }}">
+  <h2>{{ s.heading | escape }}</h2>
+  <p>{{ s.body | escape }}{% if plink != blank %} <a href="{{ plink }}">{{ s.link_text | escape }}</a>{% endif %}</p>
+  <div class="blko-ck-pref" data-pref>
+    <label><input type="checkbox" data-k="analytics"> {{ s.t_analytics | escape }}</label>
+    <label><input type="checkbox" data-k="marketing"> {{ s.t_marketing | escape }}</label>
+    <label><input type="checkbox" data-k="preferences"> {{ s.t_preferences | escape }}</label>
+  </div>
+  <div class="blko-ck-row">
+    <button type="button" class="p" data-a="all">{{ s.accept | escape }}</button>
+    <button type="button" data-a="none">{{ s.reject | escape }}</button>
+    <button type="button" data-a="pref">{{ s.prefs | escape }}</button>
+  </div>
+</div>
+<script>
+(function(){
+var root=document.getElementById('blko-ck-{{ section.id }}');if(!root)return;
+var force={{ s.force | json }};
+var pref=root.querySelector('[data-pref]');
+function close(){root.classList.remove('is-open')}
+function save(c){
+  var cp=window.Shopify&&Shopify.customerPrivacy;if(!cp)return close();
+  cp.setTrackingConsent({analytics:c.analytics,marketing:c.marketing,preferences:c.preferences,sale_of_data:c.marketing},function(){close()});
+}
+root.addEventListener('click',function(e){
+  var b=e.target.closest('button[data-a]');if(!b)return;
+  var a=b.getAttribute('data-a');
+  if(a==='all')save({analytics:true,marketing:true,preferences:true});
+  else if(a==='none')save({analytics:false,marketing:false,preferences:false});
+  else if(!pref.classList.contains('is-open')){pref.classList.add('is-open');b.textContent={{ s.save | json }};b.classList.add('p');b.setAttribute('data-a','save')}
+  else{var c={};pref.querySelectorAll('input').forEach(function(i){c[i.getAttribute('data-k')]=i.checked});save(c)}
+});
+function init(){
+  var cp=window.Shopify&&Shopify.customerPrivacy;
+  if(force||(cp&&cp.shouldShowBanner()))root.classList.add('is-open');
+}
+if(window.Shopify&&Shopify.loadFeatures){
+  Shopify.loadFeatures([{name:'consent-tracking-api',version:'0.1'}],function(err){if(!err)init()});
+}else if(force){root.classList.add('is-open')}
+})();
+</script>
+{% schema %}
+{"name":"Blocko Cookie consent","enabled_on":{"groups":["footer"]},"presets":[{"name":"Blocko Cookie consent"}],"settings":[
+{"type":"text","id":"heading","label":"Heading","default":"We use cookies"},
+{"type":"textarea","id":"body","label":"Text","default":"We use cookies to improve your experience, measure traffic and show relevant offers."},
+{"type":"url","id":"link","label":"Privacy link","info":"Empty = your Shopify privacy policy page."},
+{"type":"text","id":"link_text","label":"Privacy link text","default":"Privacy policy"},
+{"type":"text","id":"accept","label":"Accept button","default":"Accept all"},
+{"type":"text","id":"reject","label":"Reject button","default":"Reject all"},
+{"type":"text","id":"prefs","label":"Preferences button","default":"Preferences"},
+{"type":"text","id":"save","label":"Save choices button","default":"Save choices"},
+{"type":"text","id":"t_analytics","label":"Analytics toggle","default":"Analytics"},
+{"type":"text","id":"t_marketing","label":"Marketing toggle","default":"Marketing"},
+{"type":"text","id":"t_preferences","label":"Preferences toggle","default":"Preferences"},
+{"type":"select","id":"pos","label":"Position","default":"bar","options":[{"value":"bar","label":"Bottom bar"},{"value":"card","label":"Corner card"}]},
+{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},
+{"type":"checkbox","id":"force","label":"Show to everyone","default":false,"info":"Ignores Shopify's rules (for testing). Off = only where consent is required."},
+{"type":"paragraph","content":"If Shopify's own cookie banner is on (Settings > Customer privacy), turn off one of them, or shoppers see two banners."}
+]}
+{% endschema %}
