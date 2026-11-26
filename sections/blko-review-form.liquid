@@ -1,6 +1,6 @@
-{%- comment -%}Blocko review form. Sends the review to the Blocko app via the App Proxy (/apps/blocko/review).{%- endcomment -%}
 <i hidden data-blko-block="review-form"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
+{%- comment -%}Blocko review form. Sends the review to the Blocko app via the App Proxy (/apps/blocko/review).{%- endcomment -%}
 {%- liquid
   assign blko_show = true
   if product and section.settings.only_collection != blank

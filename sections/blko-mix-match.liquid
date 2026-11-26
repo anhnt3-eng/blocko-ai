@@ -25,7 +25,7 @@
 -%}
 {%- if blko_show -%}
 {% assign st=section.settings %}{% assign fx=st.price|times:100|round|money %}{% assign hl=st.headline|replace:'{n}',st.size|replace:'{price}',fx %}
-{%- capture gj -%}[{% assign sp='' %}{% for p in st.collection.products limit:8 %}{% if p.available %}{{ sp }}{"id":{{ p.first_available_variant.id }},"p":{{ p.first_available_variant.price }},"q":1,"t":{{ p.title|json }},"i":{{ p.featured_image|image_url:width:96|json }}}{% assign sp=',' %}{% endif %}{% endfor %}]{%- endcapture -%}
+{%- capture gj -%}[{% assign sp='' %}{% for p in st.collection.products limit:8 %}{% if p.available %}{{ sp }}{"id":{{ p.first_available_variant.id }},"p":{{ p.first_available_variant.price }},"q":1,"t":{{ p.title|json }},"i":{% if p.featured_image %}{{ p.featured_image|image_url:width:96|json }}{% else %}""{% endif %}}{% assign sp=',' %}{% endif %}{% endfor %}]{%- endcapture -%}
 <style>
 .blko-mm{max-width:1200px;margin-inline:auto;padding:40px 16px;
 >*{max-width:520px}
