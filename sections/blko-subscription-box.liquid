@@ -15,7 +15,7 @@
 <div class="blko-sb" id="blko-sb-{{ section.id }}" style="--c:{{ st.color }}">
 <h2>{{ st.heading }}</h2>
 <div class="f"><button type="button" class="on" data-p="{{ pa }}">{{ st.f1 }}</button><button type="button" data-p="{{ pb }}">{{ st.f2 }}</button></div>
-{% for p in st.list limit:3 %}<div class="r"><img width="72" height="72" src="{{ p.featured_image|image_url:width:72 }}" alt=""><strong>{{ p.title|escape }}</strong></div>{% endfor %}
+{% for p in st.list limit:3 %}<div class="r">{% if p.featured_image %}<img width="72" height="72" src="{{ p.featured_image|image_url:width:72 }}" alt="">{% endif %}<strong>{{ p.title|escape }}</strong></div>{% endfor %}
 {% if g %}<a class="a" href="{{ product.url }}?selling_plan={{ pa }}">{{ st.button }}</a>{% else %}<p>{{ st.note }}</p>{% endif %}
 {% if st.foot != blank %}<p>{{ st.foot }}</p>{% endif %}
 </div>

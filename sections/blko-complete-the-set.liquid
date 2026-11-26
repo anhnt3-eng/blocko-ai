@@ -1,7 +1,7 @@
 <i hidden data-blko-block="complete-the-set"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
 {% assign st = section.settings %}{% assign a = product.first_available_variant %}{% assign b = st.p1 %}{% assign c = st.p2 %}{% assign vb = b.first_available_variant %}{% assign vc = c.first_available_variant %}
-{% capture ia %}<img width="56" height="56" src="{{ product.featured_image|image_url: width: 56 }}" alt="">{% endcapture %}
+{% capture ia %}{% if product.featured_image %}<img width="56" height="56" src="{{ product.featured_image|image_url: width: 56 }}" alt="">{% endif %}{% endcapture %}
 <style>
 .blko-cs{max-width:1200px;margin-inline:auto;padding:40px 16px}
 .blko-cs>*{max-width:520px}
@@ -19,7 +19,7 @@
 {% if n > 1 %}{% assign sum = sum|plus: vb.price %}{% assign ids = ids|append: ","|append: vb.id %}{% endif %}
 {% if n > 2 %}{% assign sum = sum|plus: vc.price %}{% assign ids = ids|append: ","|append: vc.id %}{% endif %}
 <label class="r"><input type="radio" name="c{{ section.id }}" value="{{ ids }}"{% if n == 2 %} checked{% endif %}>
-<span class="g"><strong>{{ st[l] }}</strong><br>{{ ia }}{% if n > 1 %}<img width="56" height="56" src="{{ b.featured_image|image_url: width: 56 }}" alt="">{% endif %}{% if n > 2 %}<img width="56" height="56" src="{{ c.featured_image|image_url: width: 56 }}" alt="">{% endif %}</span>
+<span class="g"><strong>{{ st[l] }}</strong><br>{{ ia }}{% if n > 1 %}{% if b.featured_image %}<img width="56" height="56" src="{{ b.featured_image|image_url: width: 56 }}" alt="">{% endif %}{% endif %}{% if n > 2 %}{% if c.featured_image %}<img width="56" height="56" src="{{ c.featured_image|image_url: width: 56 }}" alt="">{% endif %}{% endif %}</span>
 {% if off > 0 %}<s>{{ sum|money }}</s>{% endif %}<strong>{{ 100|minus: off|times: sum|divided_by: 100|money }}</strong></label>
 {% endfor %}
 <button type="button">{{ st.button }}</button>

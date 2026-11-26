@@ -2,7 +2,7 @@
 <script src="/apps/blocko/beacon.js" defer></script>
 <script src="/apps/blocko/wishlist.js" defer></script>
 {% assign v = product.selected_or_first_available_variant %}
-<div class="blko-wlb" id="blko-wlb-{{ section.id }}" data-blko-wl="button"><script type="application/json" data-blko-cfg>{"save":{{ section.settings.label_save | json }},"saved":{{ section.settings.label_saved | json }},"color":{{ section.settings.color | json }},"item":{"handle":{{ product.handle | json }},"id":{{ product.id }},"title":{{ product.title | json }},"image":{{ product.featured_image | image_url: width: 400 | json }},"price":{{ v.price | default: 0 }},"variantId":{{ v.id | default: 0 }}}}</script></div>
+<div class="blko-wlb" id="blko-wlb-{{ section.id }}" data-blko-wl="button"><script type="application/json" data-blko-cfg>{"save":{{ section.settings.label_save | json }},"saved":{{ section.settings.label_saved | json }},"color":{{ section.settings.color | json }},"item":{"handle":{{ product.handle | json }},"id":{{ product.id }},"title":{{ product.title | json }},"image":{% if product.featured_image %}{{ product.featured_image | image_url: width: 400 | json }}{% else %}""{% endif %},"price":{{ v.price | default: 0 }},"variantId":{{ v.id | default: 0 }}}}</script></div>
 <style>.blko-wlb{max-width:1200px;margin-inline:auto;padding:16px}</style>
 {% schema %}
 {"name":"Blocko Wishlist Button","settings":[{"type":"text","id":"label_save","label":"Save","default":"Save"},{"type":"text","id":"label_saved","label":"Saved","default":"Saved"},{"type":"color","id":"color","label":"Accent","default":"#6538bd"}],"presets":[{"name":"Blocko Wishlist Button"}],"enabled_on":{"templates":["product"]}}

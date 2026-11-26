@@ -19,10 +19,10 @@ e=(g,x,p)=>{const n=document.createElement(g);n.textContent=x||'';p.appendChild(
 add=(p,t)=>{const v=p.variants.find(v=>v.available)||p.variants[0];I.push({id:v.id,price:v.price,title:p.title,img:p.featured_image,t})};
 let o;if({{ st.use_aov | json }})try{o={{ shop.metafields.avada_bundle.offer | json }};if(typeof o==='string')o=JSON.parse(o);
 o=(o||[]).find(x=>x.type==='fbt'&&x.status==='active'&&(x.triggerCondition==='all-products'||(x.triggerProducts||[]).some(p=>String(p.id)==='{{ product.id }}')))}catch(x){}
-const I=[{id:{{ product.selected_or_first_available_variant.id }},price:{{ product.selected_or_first_available_variant.price }},title:{{ product.title | json }},img:{{ product.featured_image | image_url: width: 80 | json }},t:1}];
+const I=[{id:{{ product.selected_or_first_available_variant.id }},price:{{ product.selected_or_first_available_variant.price }},title:{{ product.title | json }},img:{% if product.featured_image %}{{ product.featured_image | image_url: width: 80 | json }}{% else %}""{% endif %},t:1}];
 if(o){const ps=(await Promise.all((o.offerProducts||[]).map(p=>fetch(R+'products/'+p.handle+'.js').then(r=>r.ok?r.json():null).catch(()=>null)))).filter(p=>p&&p.available);
 if(ps.length)ps.forEach(p=>add(p,0));else o=0}
-if(!o){I.push(...[{%- for p in st.list -%}{%- if p.available and p.id != product.id -%}{%- assign w = p.first_available_variant -%}{id:{{ w.id }},price:{{ w.price }},title:{{ p.title | json }},img:{{ p.featured_image | image_url: width: 80 | json }},t:0},{%- endif -%}{%- endfor -%}]);
+if(!o){I.push(...[{%- for p in st.list -%}{%- if p.available and p.id != product.id -%}{%- assign w = p.first_available_variant -%}{id:{{ w.id }},price:{{ w.price }},title:{{ p.title | json }},img:{% if p.featured_image %}{{ p.featured_image | image_url: width: 80 | json }}{% else %}""{% endif %},t:0},{%- endif -%}{%- endfor -%}]);
 if(I.length<2)try{(await(await fetch(R+'recommendations/products.json?product_id={{ product.id }}&limit=2&intent=complementary')).json()).products.filter(p=>p.available).forEach(p=>add(p,0))}catch(x){}}
 const pc=!o||o.discountType==='percentage',dv=o?(o.enabledDiscount?o.discountValue||0:0):{{ st.off }},
 vt=pc?dv+'%':m(dv*100);

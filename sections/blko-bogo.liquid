@@ -1,7 +1,7 @@
 <i hidden data-blko-block="bogo"></i>
 <script src="/apps/blocko/beacon.js" defer></script>
 {%- assign v = product.selected_or_first_available_variant -%}
-{%- capture im -%}<img width="56" height="56" src="{{ product.featured_image | image_url: width: 56 }}" alt="">{%- endcapture -%}
+{%- capture im -%}{%- if product.featured_image -%}<img width="56" height="56" src="{{ product.featured_image | image_url: width: 56 }}" alt="">{%- endif -%}{%- endcapture -%}
 <style>
 .blko-bg{max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit}
 .blko-bg>*{max-width:520px}.blko-bg h2{margin:0 0 20px}
