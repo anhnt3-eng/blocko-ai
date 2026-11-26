@@ -80,7 +80,7 @@ if(sub&&S.m=='s'&&T.note)e('p',fill(T.note,{price:m(a[2]*S.q),interval:I?I.l:a[3
 b.onclick=async()=>{b.disabled=true;try{const it={id:+S.v,quantity:S.q};if(sub&&S.m=='s')it.selling_plan=a[0];
 const dr=document.querySelector('cart-drawer'),x=dr&&dr.renderContents?{sections:'cart-drawer',sections_url:location.pathname}:{};
 const r=await fetch(R+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign(it,x))});
-if(!r.ok)throw await r.json();if(x.sections){dr.renderContents(await r.json());b.disabled=false}else location.href=R+'cart'}
+if(!r.ok)throw await r.json();b.disabled=false;(self.BlkoAdded||(j=>location=R+'cart'))(await r.json())}
 catch(z){b.disabled=false;b.textContent=z.description||T.btn}}}
 document.addEventListener('change',ev=>{const f=F();if(f&&ev.target==f&&D[f.value]&&f.value!=S.v){S.v=f.value;S.i=0;R_()}});
 R_()})();</script>

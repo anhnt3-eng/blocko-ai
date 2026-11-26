@@ -52,7 +52,7 @@ sync();setInterval(sync,400);document.addEventListener('change',sync);
 b.addEventListener('click',function(){var v=cur();if(!v||!v.p)return;b.disabled=true;
 fetch(R+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},
 body:JSON.stringify({items:[{id:v.id,quantity:1,properties:{_preorder:true}}]})})
-.then(function(x){if(!x.ok)throw 0;location.href=R+'cart'})
+.then(function(x){if(!x.ok)throw 0;(self.BlkoAdded||function(){location=R+'cart'})()})
 .catch(function(){m.textContent={{ section.settings.error | json }};b.disabled=false})});
 })();
 </script>
