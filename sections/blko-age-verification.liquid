@@ -1,5 +1,5 @@
 <i hidden data-blko-block="age-verification"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
 {%- liquid
   assign s = section.settings
   assign age = s.age | default: 18

@@ -1,6 +1,6 @@
 <i hidden data-blko-block="wishlist-page"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
-<script src="/apps/blocko/wishlist.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/wishlist.js" defer></script>
 <div class="blko-wlp" id="blko-wlp-{{ section.id }}" data-blko-wl="page"><script type="application/json" data-blko-cfg>{"empty":{{ section.settings.empty_text | json }},"clear":{{ section.settings.clear_text | json }},"add":{{ section.settings.add_text | json }},"sold":{{ section.settings.sold_text | json }},"link":{{ section.settings.collection.url | default: routes.all_products_collection_url | json }},"linkText":{{ section.settings.link_text | json }},"color":{{ section.settings.color | json }},"money":{{ shop.money_format | json }}}</script></div>
 <style>.blko-wlp{max-width:1200px;margin-inline:auto;padding:40px 16px}</style>
 {% schema %}

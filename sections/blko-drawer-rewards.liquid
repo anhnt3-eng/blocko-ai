@@ -1,12 +1,12 @@
 <i hidden data-blko-block="drawer-rewards"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
 {%- assign s = section.settings -%}
 <div data-blko-drawer id="blko-dr-{{ section.id }}" style="--blko-accent:{{ s.color }}">
 <script type="application/json" data-blko-cfg>
 {"moneyFormat":{{ shop.money_format | json }},"title":{{ s.title | json }},"empty":{{ s.empty | json }},"checkout":{{ s.co | json }},"viewCart":{{ s.vc | json }},"tiers":{"msg":{{ s.msg | json }},"done":{{ s.done | json }},"list":[{"at":{{ s.a1 | times: 100 }},"label":{{ s.l1 | json }} }{%- if s.a2 > 0 -%},{"at":{{ s.a2 | times: 100 }},"label":{{ s.l2 | json }} }{%- endif -%}{%- if s.a3 > 0 -%},{"at":{{ s.a3 | times: 100 }},"label":{{ s.l3 | json }} }{%- endif -%}] } }
 </script>
 </div>
-<script src="/apps/blocko/drawer.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/drawer.js" defer></script>
 {% schema %}
 {"name":"Blocko Drawer Rewards","enabled_on":{"groups":["header"]},"presets":[{"name":"Blocko Drawer Rewards"}],"settings":[{"type":"text","id":"title","label":"Title","default":"Your cart"},{"type":"text","id":"empty","label":"Empty text","default":"Your cart is empty"},{"type":"text","id":"co","label":"Checkout button","default":"Checkout"},{"type":"text","id":"vc","label":"Cart link","default":"View cart"},{"type":"number","id":"a1","label":"Tier 1 at","default":50},{"type":"text","id":"l1","label":"Tier 1 reward","default":"Free shipping"},{"type":"number","id":"a2","label":"Tier 2 at","default":100},{"type":"text","id":"l2","label":"Tier 2 reward","default":"10% off"},{"type":"number","id":"a3","label":"Tier 3 at"},{"type":"text","id":"l3","label":"Tier 3 reward"},{"type":"text","id":"msg","label":"Progress text","default":"Spend {amount} more for {next}"},{"type":"text","id":"done","label":"Reached text","default":"All rewards unlocked"},{"type":"paragraph","content":"Blocko only shows progress. Create a matching Shopify discount or shipping rate for each tier. Leave an amount empty to skip a tier."},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
 {% endschema %}

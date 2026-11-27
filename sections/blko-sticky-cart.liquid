@@ -1,12 +1,12 @@
 <i hidden data-blko-block="sticky-cart"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
 {%- assign s = section.settings -%}
 <div data-blko-sticky id="blko-sk-{{ section.id }}" style="--blko-accent:{{ s.color }}">
 <script type="application/json" data-blko-cfg>
 {"moneyFormat":{{ shop.money_format | json }},"label":{{ s.label | json }},"pos":{{ s.pos | json }} }
 </script>
 </div>
-<script src="/apps/blocko/drawer.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/drawer.js" defer></script>
 {% schema %}
 {"name":"Blocko Sticky Cart","enabled_on":{"groups":["header","footer"]},"presets":[{"name":"Blocko Sticky Cart"}],"settings":[{"type":"text","id":"label","label":"Button text","default":"Cart"},{"type":"select","id":"pos","label":"Position","default":"right","options":[{"value":"right","label":"Bottom right"},{"value":"left","label":"Bottom left"}]},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"Opens any Blocko cart drawer on this page. Without one, it goes to the cart page."}]}
 {% endschema %}

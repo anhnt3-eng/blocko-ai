@@ -1,5 +1,5 @@
 <i hidden data-blko-block="wishlist-button"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
 {%- liquid
   assign blko_show = true
   if product and section.settings.only_collection != blank
@@ -24,7 +24,7 @@
   endif
 -%}
 {%- if blko_show -%}
-<script src="/apps/blocko/wishlist.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/wishlist.js" defer></script>
 {% assign v = product.selected_or_first_available_variant %}
 <div class="blko-wlb" id="blko-wlb-{{ section.id }}" data-blko-wl="button"><script type="application/json" data-blko-cfg>{"save":{{ section.settings.label_save | json }},"saved":{{ section.settings.label_saved | json }},"color":{{ section.settings.color | json }},"item":{"handle":{{ product.handle | json }},"id":{{ product.id }},"title":{{ product.title | json }},"image":{% if product.featured_image %}{{ product.featured_image | image_url: width: 400 | json }}{% else %}""{% endif %},"price":{{ v.price | default: 0 }},"variantId":{{ v.id | default: 0 }}}}</script></div>
 <style>.blko-wlb{max-width:1200px;margin-inline:auto;padding:16px}</style>

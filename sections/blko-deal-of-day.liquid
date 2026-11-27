@@ -1,5 +1,5 @@
 <i hidden data-blko-block="deal-of-day"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
 {%- assign p = section.settings.product -%}
 {%- if p != blank and section.settings.end != blank -%}
 {%- assign av = p.variants | where: 'available' | first | default: p.variants.first -%}

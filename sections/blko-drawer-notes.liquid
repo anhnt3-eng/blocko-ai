@@ -1,12 +1,12 @@
 <i hidden data-blko-block="drawer-notes"></i>
-<script src="/apps/blocko/beacon.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/beacon.js" defer></script>
 {%- assign s = section.settings -%}
 <div data-blko-drawer id="blko-dn-{{ section.id }}" style="--blko-accent:{{ s.color }}">
 <script type="application/json" data-blko-cfg>
 {"moneyFormat":{{ shop.money_format | json }},"title":{{ s.title | json }},"empty":{{ s.empty | json }},"checkout":{{ s.co | json }},"viewCart":{{ s.vc | json }},"note":{"label":{{ s.nl | json }} },"code":{"label":{{ s.cl | json }},"apply":{{ s.ca | json }},"bad":{{ s.cb | json }} } }
 </script>
 </div>
-<script src="/apps/blocko/drawer.js" defer></script>
+<script src="{{ shop.secure_url }}/apps/blocko/drawer.js" defer></script>
 {% schema %}
 {"name":"Blocko Drawer Notes","enabled_on":{"groups":["header"]},"presets":[{"name":"Blocko Drawer Notes"}],"settings":[{"type":"text","id":"title","label":"Title","default":"Your cart"},{"type":"text","id":"empty","label":"Empty text","default":"Your cart is empty"},{"type":"text","id":"co","label":"Checkout button","default":"Checkout"},{"type":"text","id":"vc","label":"Cart link","default":"View cart"},{"type":"text","id":"nl","label":"Order note label","default":"Add a note to your order"},{"type":"text","id":"cl","label":"Discount code label","default":"Discount code"},{"type":"text","id":"ca","label":"Apply button","default":"Apply"},{"type":"text","id":"cb","label":"Invalid code text","default":"Not applicable"},{"type":"paragraph","content":"The note and codes are saved to the cart. Codes must exist as Shopify discount codes."},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"}]}
 {% endschema %}
