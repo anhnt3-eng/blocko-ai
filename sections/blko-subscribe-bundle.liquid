@@ -1,0 +1,71 @@
+<i hidden data-blko-block="subscribe-bundle"></i>
+<script src="/apps/blocko/beacon.js" defer></script>
+{%- liquid
+  assign blko_show = true
+  if product and section.settings.only_collection != blank
+    assign blko_show = false
+    for blko_c in product.collections
+      if blko_c.id == section.settings.only_collection.id
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+  if product and blko_show and section.settings.only_tag != blank
+    assign blko_tag = section.settings.only_tag | strip | downcase
+    assign blko_show = false
+    for blko_t in product.tags
+      assign blko_tt = blko_t | downcase
+      if blko_tt == blko_tag
+        assign blko_show = true
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- if blko_show -%}
+{%- assign st = section.settings -%}
+<style>
+.blko-sb{display:block;max-width:1200px;margin-inline:auto;padding:40px 16px;font:inherit;color:#17151d}
+.blko-sb>*{max-width:520px}
+.blko-sb .r{position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:12px;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:12px;cursor:pointer}
+.blko-sb .r:has(input:checked){border:2px solid var(--c);padding:11px 13px}
+.blko-sb input[type=radio]{accent-color:var(--c);margin:0}.blko-sb .g{flex:1}.blko-sb small{display:block;opacity:.65}
+.blko-sb .t{position:absolute;top:-9px;right:14px;background:var(--c);color:#fff;font-size:11px;padding:2px 9px;border-radius:99px}
+.blko-sb s{opacity:.55}.blko-sb .m{display:flex;gap:8px;margin:16px 0 10px}.blko-sb .m label{flex:1;display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid rgba(0,0,0,.15);border-radius:10px;cursor:pointer}
+.blko-sb .m label:has(input:checked){border:2px solid var(--c);padding:9px 11px}
+.blko-sb select{width:100%;padding:10px;margin-bottom:12px;border:1px solid rgba(0,0,0,.2);border-radius:10px;background:#fff;color:inherit;font:inherit}
+.blko-sb .go{width:100%;padding:16px;border:0;border-radius:99px;background:var(--c);color:#fff;font:inherit;font-weight:700;font-size:1.1em;cursor:pointer}
+.blko-sb .er{color:#b42318;margin:8px 0 0;font-size:.9em}
+</style>
+<div class="blko-sb" id="blko-sb-{{ section.id }}" style="--c:{{ st.color }}" hidden></div>
+<script>(()=>{
+const s=document.getElementById('blko-sb-{{ section.id }}'),R=(window.Shopify&&Shopify.routes&&Shopify.routes.root)||'/',M={{ shop.money_format | json }},
+D={ {%- for v in product.variants -%}{{ v.id }}:{p:{{ v.price }},c:{{ v.compare_at_price | default: 0 }},a:[{%- for al in v.selling_plan_allocations -%}[{{ al.selling_plan.id }},{{ al.price }},{{ al.selling_plan.name | json }}],{%- endfor -%}]},{%- endfor -%} },
+REQ={{ product.requires_selling_plan | json }},
+Tr=[{%- for n in (1..3) -%}{%- assign a = 'off' | append: n -%}{%- assign g = 'label' | append: n -%}{q:{{ n }},o:{{ st[a] | default: 0 }},l:{{ st[g] | json }}},{%- endfor -%}],
+BD=+{{ st.badge | json }},T={sub:{{ st.sub_title | json }},one:{{ st.one_title | json }},badge:{{ st.badge_text | json }},per:{{ st.per_text | json }},freq:{{ st.freq_text | json }},btn:{{ st.button | json }}},
+m=c=>M.replace(/\{\{\s*\w+\s*\}\}/,(c/100).toFixed(2)),
+F=()=>document.querySelector('form[action*="/cart/add"] [name=id]'),
+e=(g,x,p,c)=>{const n=document.createElement(g);if(x)n.textContent=x;if(c)n.className=c;p&&p.appendChild(n);return n};
+let S={v:(F()&&D[F().value]?F().value:{{ product.selected_or_first_available_variant.id }})+'',t:BD>0?BD-1:0,m:'s',i:0,err:''};
+function R_(){const v=D[S.v],A=v.a,sub=A.length>0;s.textContent='';s.hidden=!sub&&REQ;if(s.hidden)return;
+if(!sub||REQ&&sub)S.m=sub?'s':'o';const su=sub&&S.m=='s',a=A[S.i]||A[0],u=su?a[1]:v.p,w=Math.max(v.c,v.p);
+Tr.forEach((t,i)=>{const l=e('label',0,s,'r'),r=e('input',0,l),g=e('span',0,l,'g'),fin=u*t.q*(100-t.o)/100|0,was=w*t.q;
+r.type='radio';r.name='blko-sb-t-{{ section.id }}';r.checked=i==S.t;r.onchange=()=>{S.t=i;R_()};
+e('strong',t.l,g);e('small',fill(T.per,{price:m(fin/t.q|0)}),g);
+if(was>fin)e('s',m(was),l);e('strong',m(fin),l);if(BD==i+1&&T.badge)e('span',T.badge,l,'t')});
+if(sub&&!REQ){const d=e('div',0,s,'m');[['s',T.sub],['o',T.one]].forEach(k=>{const l=e('label',0,d),r=e('input',0,l);r.type='radio';r.name='blko-sb-m-{{ section.id }}';r.checked=S.m==k[0];r.onchange=()=>{S.m=k[0];R_()};e('span',k[1],l)})}
+if(su&&A.length>1){const l=e('select',0,s);l.setAttribute('aria-label',T.freq);A.forEach((x,i)=>{const o=e('option',x[2],l);o.value=i;o.selected=i==S.i});l.onchange=()=>{S.i=+l.value;R_()}}
+const b=e('button',T.btn,s,'go');b.type='button';if(S.err)e('p',S.err,s,'er');
+b.onclick=async()=>{b.disabled=true;try{const it={id:+S.v,quantity:Tr[S.t].q};if(su)it.selling_plan=a[0];
+const r=await fetch(R+'cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[it]})});
+if(!r.ok)throw await r.json();b.disabled=false;(self.BlkoAdded||(j=>location=R+'cart'))(await r.json())}
+catch(z){b.disabled=false;S.err=z.description||z.message||'Error';R_()}}}
+function fill(t,o){return t.replace(/\{(\w+)\}/g,(z,k)=>o[k]==null?z:o[k])}
+document.addEventListener('change',ev=>{const f=F();if(f&&ev.target==f&&D[f.value]&&f.value!=S.v){S.v=f.value;S.i=0;R_()}});
+fetch(R+'products/{{ product.handle }}.js').then(r=>r.json()).then(j=>{j.variants.forEach(x=>D[x.id]&&(D[x.id].p=x.price));R_()}).catch(()=>0);R_()})();</script>
+{%- endif -%}
+{% schema %}
+{"name":"Blocko Subscribe Bundle","enabled_on":{"templates":["product"]},"presets":[{"name":"Blocko Subscribe Bundle"}],"settings":[{"type":"text","id":"label1","label":"Tier 1 label","default":"1 pack"},{"type":"range","id":"off1","label":"Tier 1 saving %","min":0,"max":50,"default":0},{"type":"text","id":"label2","label":"Tier 2 label","default":"2 packs"},{"type":"range","id":"off2","label":"Tier 2 saving %","min":0,"max":50,"default":10},{"type":"text","id":"label3","label":"Tier 3 label","default":"3 packs"},{"type":"range","id":"off3","label":"Tier 3 saving %","min":0,"max":50,"default":15},{"type":"select","id":"badge","label":"Badge on tier","options":[{"value":"0","label":"None"},{"value":"1","label":"Tier 1"},{"value":"2","label":"Tier 2"},{"value":"3","label":"Tier 3"}],"default":"2"},{"type":"text","id":"badge_text","label":"Badge text","default":"Most popular"},{"type":"text","id":"per_text","label":"Per-pack text","default":"{price} per pack"},{"type":"text","id":"sub_title","label":"Subscribe option","default":"Subscribe & save"},{"type":"text","id":"one_title","label":"One-time option","default":"One-time"},{"type":"text","id":"freq_text","label":"Frequency label","default":"Delivery frequency"},{"type":"text","id":"button","label":"Button text","default":"Add to cart"},{"type":"color","id":"color","label":"Accent color","default":"#6538bd"},{"type":"paragraph","content":"The tier % is display only. Create a Shopify automatic discount that applies to one-time AND subscription purchases, or shoppers will not be charged the tier price."},{"type":"header","content":"Show on"},{"type":"collection","id":"only_collection","label":"Only products in this collection","info":"Leave both empty to show on every product."},{"type":"text","id":"only_tag","label":"Only products with this tag"}]}
+{% endschema %}
